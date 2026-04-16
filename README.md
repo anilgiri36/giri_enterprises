@@ -170,16 +170,22 @@ td,th{
 <script>
 /* FIREBASE CONFIG */
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID"
+  apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
+  authDomain: "giri-enterprises-pos.firebaseapp.com",
+  projectId: "giri-enterprises-pos",
+  storageBucket: "giri-enterprises-pos.firebasestorage.app",
+  messagingSenderId: "287416000311",
+  appId: "1:287416000311:web:353a28d193e6739aa384b2",
+  measurementId: "G-NX7N5JDKP6"
 };
 
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
 const db = firebase.firestore();
-
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+  
 let total = 0;
 let role = "";
 let selectedRole = "";
