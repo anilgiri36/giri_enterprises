@@ -82,7 +82,6 @@ tr:nth-child(even){
   background:#f2f6ff;
 }
 
-/* CLOCK */
 #clockBox{
   background:#111;
   padding:10px;
@@ -91,7 +90,6 @@ tr:nth-child(even){
   margin-bottom:10px;
 }
 
-/* FOOTER */
 footer{
   position:fixed;
   bottom:0;
@@ -159,7 +157,6 @@ footer{
 
 <h2>Billing System</h2>
 
-<!-- LIVE CLOCK -->
 <div id="clockBox"></div>
 
 <h4 id="userInfo"></h4>
@@ -184,20 +181,12 @@ footer{
 </div>
 </div>
 
-<!-- FOOTER -->
 <footer>
   <p>© 2026 Anil Giri. All rights reserved.</p>
-
-  <marquee>
-    <p style="color:green;font-weight:bold;margin:0;">
-      Page created by Anil Giri
-    </p>
-  </marquee>
 </footer>
 
 <script>
 
-/* FIREBASE */
 firebase.initializeApp({
   apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
   authDomain: "giri-enterprises-pos.firebaseapp.com",
@@ -216,13 +205,12 @@ function updateClock(){
   let now = new Date();
 
   let date = now.toLocaleDateString('en-IN');
-  let time = now.toLocaleTimeString();
+  let time = now.toLocaleTimeString('en-IN');
   let day  = now.toLocaleDateString('en-IN',{weekday:'long'});
 
   document.getElementById("clockBox").innerHTML =
     "📅 " + date + " | ⏰ " + time + " | 📆 " + day;
 }
-
 setInterval(updateClock,1000);
 
 /* NAV */
@@ -256,11 +244,6 @@ function login(){
       document.getElementById("userInfo").innerText =
       "User: " + currentUser.email + " (" + currentUser.role + ")";
 
-      if(currentUser.role==="admin"){
-        document.getElementById("adminPanel").style.display="block";
-        loadUsers();
-      }
-
     });
 
   })
@@ -284,12 +267,7 @@ function addItem(){
     return;
   }
 
-  billItems.push({
-    item,
-    price,
-    qty,
-    total:price*qty
-  });
+  billItems.push({item,price,qty,total:price*qty});
 
   document.getElementById("item").value="";
   document.getElementById("price").value="";
@@ -330,20 +308,57 @@ function render(){
   document.getElementById("total").innerText=total;
 }
 
-/* PRINT WITH USER + DATE + TIME + DAY */
+/* FIXED EDIT */
+function editItem(i){
+  let x=billItems[i];
+
+  let item=prompt("Item",x.item);
+  let price=Number(prompt("Price",x.price));
+  let qty=Number(prompt("Qty",x.qty));
+
+  if(!item || isNaN(price) || isNaN(qty)) return;
+
+  billItems[i]={item,price,qty,total:price*qty};
+  render();
+}
+
+/* FIXED DELETE */
+function deleteItem(i){
+  if(confirm("Delete item?")){
+    billItems.splice(i,1);
+    render();
+  }
+}
+
+/* DELETE ALL */
+function clearAllItems(){
+  if(confirm("Delete all items?")){
+    billItems=[];
+    render();
+  }
+}
+
+/* FIXED PRINT (DATE TIME DAY WORKING) */
 function printBill(){
 
   if(billItems.length===0){
-    alert("No items to print");
+    alert("No items");
     return;
   }
 
-  let now=new Date();
+  let now = new Date();
 
-  let date = now.toLocaleDateString('en-IN');
-  let time = now.toLocaleTimeString();
-  let day  = now.toLocaleDateString('en-IN',{weekday:'long'});
-  let user = currentUser ? currentUser.email : "Unknown";
+  let date = now.toLocaleDateString('en-IN',{
+    day:'2-digit',month:'2-digit',year:'numeric'
+  });
+
+  let time = now.toLocaleTimeString('en-IN',{
+    hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true
+  });
+
+  let day = now.toLocaleDateString('en-IN',{weekday:'long'});
+
+  let user=currentUser?currentUser.email:"Unknown";
 
   let total=0;
   let rows="";
@@ -373,10 +388,10 @@ function printBill(){
 
   <hr>
 
-  <p><b>User:</b> ${user}</p>
-  <p><b>Date:</b> ${date}</p>
-  <p><b>Time:</b> ${time}</p>
-  <p><b>Day:</b> ${day}</p>
+  <p>User: ${user}</p>
+  <p>Date: ${date}</p>
+  <p>Time: ${time}</p>
+  <p>Day: ${day}</p>
 
   <hr>
 
@@ -385,13 +400,9 @@ function printBill(){
   ${rows}
   </table>
 
-  <h3 style="text-align:center">Total: ₹${total}</h3>
-  <h3 style="text-align:center">Thank You 🙏</h3>
+  <h3>Total: ₹${total}</h3>
 
-  <script>
-    window.onload=function(){ window.print(); }
-  <\/script>
-
+  <script>window.onload=function(){window.print()}<\/script>
   </body>
   </html>
   `);
