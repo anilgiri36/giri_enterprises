@@ -3,98 +3,34 @@
 <meta charset="UTF-8">
 <title>Giri Enterprises POS</title>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+<!-- FIREBASE v8 (IMPORTANT) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:#eef2f7;
-}
-
-/* TOP BAR */
-.topbar{
-  background:linear-gradient(90deg,#2c3e50,#34495e);
-  color:white;
-  text-align:center;
-  padding:12px;
-  font-weight:bold;
-}
-
-/* CENTER SCREEN */
-.centerBox{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  flex-direction:column;
-  background:linear-gradient(135deg,#2c3e50,#34495e);
-  color:white;
-  text-align:center;
-}
-
-/* LOGIN CARD */
-.card{
-  background:white;
-  color:black;
-  padding:20px;
-  border-radius:12px;
-  width:300px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.3);
-}
-
-/* APP */
-.container{display:none;padding:10px}
-
-.box{
-  background:white;
-  margin:10px;
-  padding:15px;
-  border-radius:10px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.1);
-}
-
-input,select,button{
-  padding:8px;
-  margin:5px;
-  width:90%;
-}
-
-button{
-  background:#2980b9;
-  color:white;
-  border:none;
-  cursor:pointer;
-  border-radius:5px;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-td,th{
-  border:1px solid #ccc;
-  padding:6px;
-  text-align:center;
-}
+body{margin:0;font-family:Arial;background:#eef2f7;}
+.topbar{background:#2c3e50;color:white;text-align:center;padding:10px;}
+.centerBox{display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;background:#34495e;color:white;}
+.card{background:white;color:black;padding:20px;border-radius:10px;width:300px;}
+.container{display:none;padding:10px;}
+.box{background:white;margin:10px;padding:15px;border-radius:10px;}
+input,select,button{padding:8px;margin:5px;width:90%;}
+button{background:#2980b9;color:white;border:none;cursor:pointer;}
+table{width:100%;border-collapse:collapse;}
+td,th{border:1px solid #ccc;padding:6px;text-align:center;}
 </style>
 </head>
 
 <body>
 
-<!-- TOP ADDRESS -->
 <div class="topbar">
 🏪 Giri Enterprises | 📍 Tq. & Dist: Latur, Maharashtra - 413512
 </div>
 
 <!-- WELCOME -->
 <div id="welcome" class="centerBox">
-<h1>🏪 Giri Enterprises POS</h1>
-<p>Select Login Type</p>
-
+<h2>Welcome to Giri Enterprises POS</h2>
 <button onclick="showLogin('admin')">👑 Admin Login</button>
 <button onclick="showLogin('employee')">👨‍💼 Employee Login</button>
 </div>
@@ -102,18 +38,11 @@ td,th{
 <!-- LOGIN -->
 <div id="login" class="centerBox" style="display:none;">
 <div class="card">
-
-<h2 id="loginTitle">Login</h2>
-
-<input id="email" placeholder="Email"><br>
-
+<h3 id="loginTitle"></h3>
+<input id="email" placeholder="Email">
 <input id="pass" type="password" placeholder="Password">
-
-<button onclick="togglePass()">👁 Show/Hide</button>
-
 <button onclick="login()">Login</button>
 <button onclick="back()">⬅ Back</button>
-
 </div>
 </div>
 
@@ -125,7 +54,7 @@ td,th{
 <h3>👑 Admin Panel</h3>
 
 <input id="newEmail" placeholder="Email">
-<input id="newPass" type="password" placeholder="Password">
+<input id="newPass" placeholder="Password">
 
 <select id="role">
 <option value="employee">Employee</option>
@@ -149,9 +78,7 @@ td,th{
 <button onclick="addItem()">Add Item</button>
 
 <table id="billTable">
-<tr>
-<th>Item</th><th>Price</th><th>Qty</th><th>Total</th>
-</tr>
+<tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr>
 </table>
 
 <h3>Total: ₹<span id="total">0</span></h3>
@@ -162,147 +89,131 @@ td,th{
 
 </div>
 
-<!-- MARQUEE -->
-<marquee style="background:#2c3e50;color:white;padding:8px;font-weight:bold;">
-© Created by Anil Giri | Giri Enterprises POS System | All Rights Reserved
+<marquee style="background:#2c3e50;color:white;padding:8px;">
+© Created by Anil Giri
 </marquee>
 
 <script>
-/* FIREBASE CONFIG */
-const firebaseConfig = {
+
+/* FIREBASE CONFIG (FIXED) */
+firebase.initializeApp({
   apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
   authDomain: "giri-enterprises-pos.firebaseapp.com",
   projectId: "giri-enterprises-pos",
   storageBucket: "giri-enterprises-pos.firebasestorage.app",
   messagingSenderId: "287416000311",
-  appId: "1:287416000311:web:353a28d193e6739aa384b2",
-  measurementId: "G-NX7N5JDKP6"
-};
-
-firebase.initializeApp(firebaseConfig);
+  appId: "1:287416000311:web:353a28d193e6739aa384b2"
+});
 
 const auth = firebase.auth();
 const db = firebase.firestore();
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-  
+
 let total = 0;
-let role = "";
 let selectedRole = "";
 
-/* WELCOME */
+/* NAVIGATION */
 function showLogin(type){
   selectedRole = type;
   document.getElementById("welcome").style.display="none";
   document.getElementById("login").style.display="flex";
-
   document.getElementById("loginTitle").innerText =
     type === "admin" ? "👑 Admin Login" : "👨‍💼 Employee Login";
 }
 
-/* BACK */
 function back(){
   document.getElementById("login").style.display="none";
   document.getElementById("welcome").style.display="flex";
 }
 
-/* SHOW PASS */
-function togglePass(){
-  let p = document.getElementById("pass");
-  p.type = (p.type==="password")?"text":"password";
-}
-
 /* LOGIN */
 async function login(){
+  try{
+    let email = document.getElementById("email").value;
+    let pass = document.getElementById("pass").value;
 
-  let res = await auth.signInWithEmailAndPassword(email.value, pass.value);
+    let res = await auth.signInWithEmailAndPassword(email, pass);
+    let uid = res.user.uid;
 
-  let uid = res.user.uid;
-  let doc = await db.collection("users").doc(uid).get();
+    let doc = await db.collection("users").doc(uid).get();
 
-  role = doc.data().role;
+    if(!doc.exists){
+      alert("User not found in database");
+      return;
+    }
 
-  if(role !== selectedRole){
-    alert("❌ Not allowed as " + selectedRole);
-    await auth.signOut();
-    return;
-  }
+    let role = doc.data().role;
 
-  document.getElementById("login").style.display="none";
-  document.getElementById("app").style.display="block";
+    if(role !== selectedRole){
+      alert("❌ Wrong role selected");
+      await auth.signOut();
+      return;
+    }
 
-  if(role !== "admin"){
-    document.getElementById("adminBox").style.display="none";
-  } else {
-    loadUsers();
+    document.getElementById("login").style.display="none";
+    document.getElementById("app").style.display="block";
+
+    if(role !== "admin"){
+      document.getElementById("adminBox").style.display="none";
+    } else {
+      loadUsers();
+    }
+
+  }catch(e){
+    alert(e.message);
   }
 }
 
 /* CREATE USER */
 async function createUser(){
+  let email = document.getElementById("newEmail").value;
+  let pass = document.getElementById("newPass").value;
+  let role = document.getElementById("role").value;
 
-  let snap = await db.collection("users").get();
-  let emp=0, adminExists=false;
-
-  snap.forEach(d=>{
-    if(d.data().role==="employee") emp++;
-    if(d.data().role==="admin") adminExists=true;
-  });
-
-  if(role.value==="employee" && emp>=20){
-    alert("Max 20 employees");
-    return;
-  }
-
-  if(role.value==="admin" && adminExists){
-    alert("Only 1 admin allowed");
-    return;
-  }
-
-  let u = await auth.createUserWithEmailAndPassword(newEmail.value,newPass.value);
+  let u = await auth.createUserWithEmailAndPassword(email, pass);
 
   await db.collection("users").doc(u.user.uid).set({
-    email:newEmail.value,
-    role:role.value
+    email: email,
+    role: role
   });
 
+  alert("User Created ✔");
   loadUsers();
 }
 
 /* LOAD USERS */
 async function loadUsers(){
   let snap = await db.collection("users").get();
-  userList.innerHTML="";
+  let list = document.getElementById("userList");
+  list.innerHTML = "";
 
   snap.forEach(d=>{
-    userList.innerHTML += `<li>${d.data().email} (${d.data().role})</li>`;
+    list.innerHTML += `<li>${d.data().email} (${d.data().role})</li>`;
   });
 }
 
-/* BILL */
+/* BILLING */
 function addItem(){
-  let t = price.value * qty.value;
+  let item = document.getElementById("item").value;
+  let price = Number(document.getElementById("price").value);
+  let qty = Number(document.getElementById("qty").value);
 
-  let row = billTable.insertRow();
-  row.innerHTML = `
-    <td>${item.value}</td>
-    <td>${price.value}</td>
-    <td>${qty.value}</td>
-    <td>${t}</td>
-  `;
+  let t = price * qty;
+
+  let row = document.getElementById("billTable").insertRow();
+  row.innerHTML = `<td>${item}</td><td>${price}</td><td>${qty}</td><td>${t}</td>`;
 
   total += t;
-  totalEl.innerText = total;
+  document.getElementById("total").innerText = total;
 }
 
 /* SAVE BILL */
 async function saveBill(){
   await db.collection("bills").add({
-    total,
-    createdAt: new Date().toISOString()
+    total: total,
+    date: new Date().toISOString()
   });
 
-  alert("Saved ✔");
+  alert("Bill Saved ✔");
 }
 
 /* PRINT */
@@ -310,13 +221,14 @@ function printBill(){
   let w = window.open();
   w.document.write(`
     <h2>Giri Enterprises</h2>
-    <p>📍 Latur, Maharashtra - 413512</p>
+    <p>Latur, Maharashtra - 413512</p>
     <hr>
-    ${billTable.outerHTML}
+    ${document.getElementById("billTable").outerHTML}
     <h3>Total: ₹${total}</h3>
   `);
   w.print();
 }
+
 </script>
 
 </body>
