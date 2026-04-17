@@ -130,14 +130,20 @@ input,select{
 <script>
 
 /* FIREBASE CONFIG */
-firebase.initializeApp({
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID"
-});
+const firebaseConfig = {
+  apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
+  authDomain: "giri-enterprises-pos.firebaseapp.com",
+  databaseURL: "https://giri-enterprises-pos-default-rtdb.firebaseio.com",
+  projectId: "giri-enterprises-pos",
+  storageBucket: "giri-enterprises-pos.firebasestorage.app",
+  messagingSenderId: "287416000311",
+  appId: "1:287416000311:web:353a28d193e6739aa384b2",
+  measurementId: "G-NX7N5JDKP6"
+};
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 let selectedRole = "";
 
