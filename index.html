@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -9,7 +8,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
-
 body{
   margin:0;
   font-family:Arial;
@@ -78,33 +76,15 @@ td{
   padding:6px;
 }
 
-tr:nth-child(even){
-  background:#f2f6ff;
-}
-
-/* CLOCK */
-#clockBox{
-  background:#111;
-  color:#fff;
-  padding:10px;
-  border-radius:8px;
-  text-align:center;
-  margin-bottom:10px;
-  font-weight:bold;
-}
-
-/* FOOTER */
 footer{
   position:fixed;
   bottom:0;
-  left:0;
   width:100%;
   background:#111;
   color:gray;
   text-align:center;
   padding:8px;
 }
-
 </style>
 </head>
 
@@ -137,8 +117,27 @@ footer{
 <!-- APP -->
 <div id="app">
 
-<div style="text-align:right;padding:10px;">
+<div style="text-align:right;">
 <button onclick="logout()" style="background:red;color:#fff;width:120px;">Sign Out</button>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="section">
+<h2>Admin User Management</h2>
+
+<input id="newEmail" placeholder="New User Email">
+<input id="newPass" type="password" placeholder="Password">
+
+<select id="newRole">
+  <option value="employee">Employee</option>
+  <option value="admin">Admin</option>
+</select>
+
+<button onclick="createUser()">Add User</button>
+
+<h3>Users List</h3>
+<ul id="userList"></ul>
+
 </div>
 
 <!-- BILLING -->
@@ -146,39 +145,28 @@ footer{
 
 <h2>Billing System</h2>
 
-<div id="clockBox"></div>
-
-<h4 id="userInfo"></h4>
-
 <input id="item" placeholder="Item">
 <input id="price" placeholder="Price">
 <input id="qty" placeholder="Qty">
 
 <button onclick="addItem()">Add Item</button>
 <button onclick="clearAllItems()" style="background:red;color:#fff;">Delete All</button>
+<button onclick="printBill()">Print Bill</button>
 
 <table id="billTable"></table>
 
 <h3>Total: ₹<span id="total">0</span></h3>
-
-<button onclick="printBill()">Print Bill</button>
 
 </div>
 </div>
 
 <!-- FOOTER -->
 <footer>
-  <p>© 2026 Anil Giri. All rights reserved.</p>
-  <marquee>
-    <p style="color:green;font-weight:bold;">
-      Page created by Anil Giri
-    </p>
-  </marquee>
+© 2026 Anil Giri. All rights reserved.
 </footer>
 
 <script>
 
-/* FIREBASE */
 firebase.initializeApp({
   apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
   authDomain: "giri-enterprises-pos.firebaseapp.com",
@@ -194,23 +182,12 @@ let currentUser=null;
 let selectedRole="";
 let billItems=[];
 
-/* CLOCK */
-function updateClock(){
-  const now=new Date();
-  document.getElementById("clockBox").innerHTML =
-    "📅 " + now.toLocaleDateString('en-IN') +
-    " | ⏰ " + now.toLocaleTimeString('en-IN') +
-    " | 📆 " + now.toLocaleDateString('en-IN',{weekday:'long'});
-}
-setInterval(updateClock,1000);
-window.addEventListener("load",updateClock);
-
 /* NAV */
 function openLogin(role){
-  selectedRole = role;
+  selectedRole=role;
   document.getElementById("welcome").style.display="none";
   document.getElementById("loginPage").style.display="flex";
-  document.getElementById("loginTitle").innerText = role.toUpperCase() + " LOGIN";
+  document.getElementById("loginTitle").innerText=role.toUpperCase()+" LOGIN";
 }
 
 function back(){
@@ -230,15 +207,10 @@ function login(){
     db.ref("users/"+res.user.uid).once("value")
     .then(snap=>{
 
-      if(!snap.exists()){
-        alert("User role not found");
-        return;
-      }
+      const data=snap.val();
 
-      const data = snap.val();
-
-      if(selectedRole !== data.role){
-        alert("Access denied for " + selectedRole);
+      if(selectedRole!==data.role){
+        alert("Access denied");
         auth.signOut();
         return;
       }
@@ -248,8 +220,10 @@ function login(){
       document.getElementById("loginPage").style.display="none";
       document.getElementById("app").style.display="block";
 
-      document.getElementById("userInfo").innerText =
-        "User: " + currentUser.email + " (" + currentUser.role + ")";
+      if(data.role==="admin"){
+        document.getElementById("adminPanel").style.display="block";
+        loadUsers();
+      }
 
     });
 
@@ -257,127 +231,98 @@ function login(){
   .catch(e=>alert(e.message));
 }
 
-/* LOGOUT */
-function logout(){
-  auth.signOut().then(()=>location.reload());
+/* CREATE USER (ADMIN ONLY) */
+function createUser(){
+
+  let email=document.getElementById("newEmail").value;
+  let pass=document.getElementById("newPass").value;
+  let role=document.getElementById("newRole").value;
+
+  auth.createUserWithEmailAndPassword(email,pass)
+  .then(res=>{
+
+    db.ref("users/"+res.user.uid).set({
+      email:email,
+      role:role
+    });
+
+    alert("User created");
+    loadUsers();
+
+  })
+  .catch(e=>alert(e.message));
 }
 
-/* ADD ITEM */
-function addItem(){
+/* LOAD USERS */
+function loadUsers(){
 
-  let item=document.getElementById("item").value.trim();
+  db.ref("users").once("value").then(snap=>{
+
+    let html="";
+
+    snap.forEach(child=>{
+
+      let u=child.val();
+
+      html+=`
+      <li>
+        ${u.email} (${u.role})
+        <button onclick="deleteUser('${child.key}')">Delete</button>
+      </li>`;
+    });
+
+    document.getElementById("userList").innerHTML=html;
+
+  });
+
+}
+
+/* DELETE USER */
+function deleteUser(uid){
+
+  if(confirm("Delete user?")){
+    db.ref("users/"+uid).remove();
+    loadUsers();
+  }
+}
+
+/* BILLING */
+function addItem(){
+  let item=document.getElementById("item").value;
   let price=Number(document.getElementById("price").value);
   let qty=Number(document.getElementById("qty").value);
 
-  if(!item || price<=0 || qty<=0) return;
-
   billItems.push({item,price,qty,total:price*qty});
-
-  document.getElementById("item").value="";
-  document.getElementById("price").value="";
-  document.getElementById("qty").value="";
-
   render();
 }
 
-/* RENDER */
 function render(){
 
-  let html=`
-  <tr>
-    <th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th>Action</th>
-  </tr>`;
-
   let total=0;
+  let html="<tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr>";
 
-  billItems.forEach((x,i)=>{
+  billItems.forEach(x=>{
     total+=x.total;
-
-    html+=`
-    <tr>
-      <td>${x.item}</td>
-      <td>${x.price}</td>
-      <td>${x.qty}</td>
-      <td>${x.total}</td>
-      <td>
-        <button onclick="editItem(${i})">Edit</button>
-        <button onclick="deleteItem(${i})">Delete</button>
-      </td>
-    </tr>`;
+    html+=`<tr><td>${x.item}</td><td>${x.price}</td><td>${x.qty}</td><td>${x.total}</td></tr>`;
   });
 
   document.getElementById("billTable").innerHTML=html;
   document.getElementById("total").innerText=total;
 }
 
-/* EDIT */
-function editItem(i){
-  let x=billItems[i];
-  let item=prompt("Item",x.item);
-  let price=Number(prompt("Price",x.price));
-  let qty=Number(prompt("Qty",x.qty));
-
-  billItems[i]={item,price,qty,total:price*qty};
-  render();
-}
-
-/* DELETE */
-function deleteItem(i){
-  if(confirm("Delete item?")){
-    billItems.splice(i,1);
-    render();
-  }
-}
-
-/* CLEAR ALL */
-function clearAllItems(){
-  if(confirm("Delete all items?")){
-    billItems=[];
-    render();
-  }
-}
-
 /* PRINT */
 function printBill(){
-
-  let now=new Date();
-  let user=currentUser?currentUser.email:"Unknown";
-
-  let rows="";
-  let total=0;
-
-  billItems.forEach(x=>{
-    total+=x.total;
-    rows+=`
-      <tr>
-        <td>${x.item}</td>
-        <td>${x.price}</td>
-        <td>${x.qty}</td>
-        <td>${x.total}</td>
-      </tr>`;
-  });
 
   let w=window.open("");
 
   w.document.write(`
-  <html>
-  <body>
-  <h2 style="text-align:center">GIRI ENTERPRISES</h2>
-  <p>User: ${user}</p>
-  <p>${now.toLocaleString()}</p>
-
+  <h2>Giri Enterprises</h2>
+  <p>User: ${currentUser.email}</p>
   <table border="1" width="100%">
-  <tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr>
-  ${rows}
+  ${document.getElementById("billTable").innerHTML}
   </table>
-
-  <h3>Total: ₹${total}</h3>
-
-  <script>
-    window.print();
-  <\/script>
-  </body>
-  </html>`);
+  <script>window.print()<\/script>
+  `);
 
   w.document.close();
 }
