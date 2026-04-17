@@ -137,12 +137,13 @@ async function login(){
 
     let doc = await db.collection("users").doc(uid).get();
 
-    if(!doc.exists){
-      alert("User not found in database");
-      return;
-    }
+   if(!doc.exists){
+  alert("User not found in database");
+  return;
+}
 
-    let role = doc.data().role;
+let data = doc.data();
+let role = data.role || "";
 
     if(role !== selectedRole){
       alert("❌ Wrong role selected");
