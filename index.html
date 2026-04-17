@@ -82,7 +82,6 @@ tr:nth-child(even){
   background:#f2f6ff;
 }
 
-/* CLOCK */
 #clockBox{
   background:#111;
   padding:10px;
@@ -91,7 +90,6 @@ tr:nth-child(even){
   margin-bottom:10px;
 }
 
-/* FOOTER */
 footer{
   position:fixed;
   bottom:0;
@@ -101,6 +99,7 @@ footer{
   color:gray;
   text-align:center;
   padding:8px;
+  z-index:9999;
 }
 
 </style>
@@ -109,7 +108,7 @@ footer{
 <body>
 
 <!-- WELCOME -->
-<div id="welcome" class="center">
+<div id="welcome" class="center" style="display:flex">
 <h1>🏪 Giri Enterprises POS</h1>
 <button onclick="openLogin('admin')">Admin Login</button>
 <button onclick="openLogin('employee')">Employee Login</button>
@@ -136,8 +135,10 @@ footer{
 <button onclick="logout()" style="background:red;color:#fff;width:120px;">Sign Out</button>
 </div>
 
+<!-- ADMIN -->
 <div id="adminPanel" class="section">
 <h2>Admin Panel</h2>
+
 <input id="newEmail" placeholder="Email">
 <input id="newPass" placeholder="Password">
 
@@ -151,12 +152,12 @@ footer{
 <ul id="userList"></ul>
 </div>
 
+<!-- BILLING -->
 <div class="section">
 
 <h2>Billing System</h2>
 
-<!-- CLOCK -->
-<div id="clockBox">Loading clock...</div>
+<div id="clockBox"></div>
 
 <h4 id="userInfo"></h4>
 
@@ -186,7 +187,6 @@ footer{
 
 <script>
 
-/* FIREBASE */
 firebase.initializeApp({
   apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
   authDomain: "giri-enterprises-pos.firebaseapp.com",
@@ -200,42 +200,18 @@ const db = firebase.database();
 let currentUser=null;
 let billItems=[];
 
-/* ✅ FIXED CLOCK (WORKING IN ALL BROWSERS) */
+/* CLOCK */
 function updateClock(){
-
   let now = new Date();
 
-  let dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  let date = now.toLocaleDateString('en-IN');
+  let time = now.toLocaleTimeString('en-IN');
+  let day  = now.toLocaleDateString('en-IN',{weekday:'long'});
 
-  let dd = String(now.getDate()).padStart(2,'0');
-  let mm = String(now.getMonth()+1).padStart(2,'0');
-  let yyyy = now.getFullYear();
-
-  let hours = now.getHours();
-  let minutes = String(now.getMinutes()).padStart(2,'0');
-  let seconds = String(now.getSeconds()).padStart(2,'0');
-
-  let ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12;
-  hours = hours ? hours : 12;
-
-  let date = dd + "-" + mm + "-" + yyyy;
-  let time = hours + ":" + minutes + ":" + seconds + " " + ampm;
-  let day  = dayNames[now.getDay()];
-
-  let el = document.getElementById("clockBox");
-
-  if(el){
-    el.innerHTML =
-      "📅 " + date + " | ⏰ " + time + " | 📆 " + day;
-  }
+  document.getElementById("clockBox").innerHTML =
+    "📅 " + date + " | ⏰ " + time + " | 📆 " + day;
 }
-
-/* ✅ IMPORTANT FIX: RUN AFTER PAGE LOAD */
-window.onload = function(){
-  updateClock();
-  setInterval(updateClock,1000);
-};
+setInterval(updateClock,1000);
 
 /* NAV */
 function openLogin(role){
@@ -279,18 +255,28 @@ function logout(){
   auth.signOut().then(()=>location.reload());
 }
 
-/* BILLING FUNCTIONS (UNCHANGED) */
+/* ADD ITEM */
 function addItem(){
+
   let item=document.getElementById("item").value.trim();
   let price=Number(document.getElementById("price").value);
   let qty=Number(document.getElementById("qty").value);
 
-  if(!item || price<=0 || qty<=0) return;
+  if(!item || price<=0 || qty<=0 || isNaN(price) || isNaN(qty)){
+    alert("Enter valid data");
+    return;
+  }
 
   billItems.push({item,price,qty,total:price*qty});
+
+  document.getElementById("item").value="";
+  document.getElementById("price").value="";
+  document.getElementById("qty").value="";
+
   render();
 }
 
+/* RENDER */
 function render(){
 
   let table=document.getElementById("billTable");
@@ -322,23 +308,106 @@ function render(){
   document.getElementById("total").innerText=total;
 }
 
+/* FIXED EDIT */
 function editItem(i){
   let x=billItems[i];
+
   let item=prompt("Item",x.item);
   let price=Number(prompt("Price",x.price));
   let qty=Number(prompt("Qty",x.qty));
+
+  if(!item || isNaN(price) || isNaN(qty)) return;
+
   billItems[i]={item,price,qty,total:price*qty};
   render();
 }
 
+/* FIXED DELETE */
 function deleteItem(i){
-  billItems.splice(i,1);
-  render();
+  if(confirm("Delete item?")){
+    billItems.splice(i,1);
+    render();
+  }
 }
 
+/* DELETE ALL */
 function clearAllItems(){
-  billItems=[];
-  render();
+  if(confirm("Delete all items?")){
+    billItems=[];
+    render();
+  }
+}
+
+/* FIXED PRINT (DATE TIME DAY WORKING) */
+function printBill(){
+
+  if(billItems.length===0){
+    alert("No items");
+    return;
+  }
+
+  let now = new Date();
+
+  let date = now.toLocaleDateString('en-IN',{
+    day:'2-digit',month:'2-digit',year:'numeric'
+  });
+
+  let time = now.toLocaleTimeString('en-IN',{
+    hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true
+  });
+
+  let day = now.toLocaleDateString('en-IN',{weekday:'long'});
+
+  let user=currentUser?currentUser.email:"Unknown";
+
+  let total=0;
+  let rows="";
+
+  billItems.forEach(x=>{
+    total+=x.total;
+    rows+=`
+      <tr>
+        <td>${x.item}</td>
+        <td>${x.price}</td>
+        <td>${x.qty}</td>
+        <td>${x.total}</td>
+      </tr>
+    `;
+  });
+
+  let w=window.open("");
+
+  w.document.write(`
+  <html>
+  <body>
+  <h2 style="text-align:center">GIRI ENTERPRISES</h2>
+
+  <p style="text-align:center">
+  Address: Taluka-Latur, Dist-Latur - 413 512, Maharashtra, India
+  </p>
+
+  <hr>
+
+  <p>User: ${user}</p>
+  <p>Date: ${date}</p>
+  <p>Time: ${time}</p>
+  <p>Day: ${day}</p>
+
+  <hr>
+
+  <table border="1" width="100%">
+  <tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr>
+  ${rows}
+  </table>
+
+  <h3>Total: ₹${total}</h3>
+
+  <script>window.onload=function(){window.print()}<\/script>
+  </body>
+  </html>
+  `);
+
+  w.document.close();
 }
 
 </script>
