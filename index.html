@@ -82,7 +82,7 @@ tr:nth-child(even){
   background:#f2f6ff;
 }
 
-/* CLOCK FIXED STYLE */
+/* CLOCK */
 #clockBox{
   background:#111;
   color:#fff;
@@ -161,8 +161,7 @@ footer{
 
 <h2>Billing System</h2>
 
-<!-- CLOCK -->
-<div id="clockBox">Loading system time...</div>
+<div id="clockBox"></div>
 
 <h4 id="userInfo"></h4>
 
@@ -173,11 +172,7 @@ footer{
 <button onclick="addItem()">Add Item</button>
 <button onclick="clearAllItems()" style="background:red;color:#fff;">Delete All</button>
 
-<table id="billTable">
-<tr>
-<th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th>Action</th>
-</tr>
-</table>
+<table id="billTable"></table>
 
 <h3>Total: ₹<span id="total">0</span></h3>
 
@@ -195,7 +190,7 @@ footer{
 
 /* FIREBASE */
 firebase.initializeApp({
-  apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
+  apiKey: "AIzaSyBaT...",
   authDomain: "giri-enterprises-pos.firebaseapp.com",
   databaseURL: "https://giri-enterprises-pos-default-rtdb.firebaseio.com",
   projectId: "giri-enterprises-pos"
@@ -207,25 +202,20 @@ const db = firebase.database();
 let currentUser=null;
 let billItems=[];
 
-/* ✅ FIXED CLOCK (MAIN FIX) */
+/* CLOCK */
 function updateClock(){
-
-  const el = document.getElementById("clockBox");
+  const el=document.getElementById("clockBox");
   if(!el) return;
 
-  const now = new Date();
+  const now=new Date();
 
-  const date = now.toLocaleDateString('en-IN', {
-    weekday:'long',
-    year:'numeric',
-    month:'long',
-    day:'numeric'
+  const date=now.toLocaleDateString('en-IN',{
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
   });
 
-  const time = now.toLocaleTimeString('en-IN');
+  const time=now.toLocaleTimeString('en-IN');
 
-  el.innerHTML =
-    "📅 <b>" + date + "</b><br>⏰ <b>" + time + "</b>";
+  el.innerHTML=`📅 ${date} | ⏰ ${time}`;
 }
 
 setInterval(updateClock,1000);
@@ -245,30 +235,24 @@ function back(){
 
 /* LOGIN */
 function login(){
-
   let email=document.getElementById("email").value.trim();
   let pass=document.getElementById("pass").value.trim();
 
   auth.signInWithEmailAndPassword(email,pass)
   .then(res=>{
-
     db.ref("users/"+res.user.uid).once("value").then(snap=>{
-
       currentUser=snap.val();
 
       document.getElementById("loginPage").style.display="none";
       document.getElementById("app").style.display="block";
 
-      document.getElementById("userInfo").innerText =
-      "User: " + currentUser.email + " (" + currentUser.role + ")";
+      document.getElementById("userInfo").innerText=
+      `User: ${currentUser.email} (${currentUser.role})`;
 
       if(currentUser.role==="admin"){
         document.getElementById("adminPanel").style.display="block";
-        loadUsers();
       }
-
     });
-
   })
   .catch(e=>alert(e.message));
 }
@@ -291,10 +275,7 @@ function addItem(){
   }
 
   billItems.push({
-    item,
-    price,
-    qty,
-    total:price*qty
+    item, price, qty, total:price*qty
   });
 
   document.getElementById("item").value="";
@@ -304,12 +285,12 @@ function addItem(){
   render();
 }
 
-/* RENDER */
+/* RENDER (FIXED BUTTONS) */
 function render(){
 
   let table=document.getElementById("billTable");
 
-  table.innerHTML=`
+  let html=`
   <tr>
     <th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th>Action</th>
   </tr>`;
@@ -319,35 +300,66 @@ function render(){
   billItems.forEach((x,i)=>{
     total+=x.total;
 
-    table.innerHTML+=`
-      <tr>
-        <td>${x.item}</td>
-        <td>${x.price}</td>
-        <td>${x.qty}</td>
-        <td>${x.total}</td>
-        <td>
-          <button onclick="editItem(${i})">Edit</button>
-          <button onclick="deleteItem(${i})">Delete</button>
-        </td>
-      </tr>
-    `;
+    html+=`
+    <tr>
+      <td>${x.item}</td>
+      <td>${x.price}</td>
+      <td>${x.qty}</td>
+      <td>${x.total}</td>
+      <td>
+        <button onclick="editItem(${i})">Edit</button>
+        <button onclick="deleteItem(${i})">Delete</button>
+      </td>
+    </tr>`;
   });
 
+  table.innerHTML=html;
   document.getElementById("total").innerText=total;
 }
 
-/* PRINT FIXED */
+/* EDIT */
+function editItem(i){
+  let x=billItems[i];
+
+  let item=prompt("Item",x.item);
+  let price=Number(prompt("Price",x.price));
+  let qty=Number(prompt("Qty",x.qty));
+
+  if(!item || isNaN(price) || isNaN(qty)) return;
+
+  billItems[i]={item,price,qty,total:price*qty};
+  render();
+}
+
+/* DELETE */
+function deleteItem(i){
+  if(confirm("Delete item?")){
+    billItems.splice(i,1);
+    render();
+  }
+}
+
+/* CLEAR ALL */
+function clearAllItems(){
+  if(confirm("Delete all items?")){
+    billItems=[];
+    render();
+  }
+}
+
+/* PRINT */
 function printBill(){
 
+  if(billItems.length===0){
+    alert("No items");
+    return;
+  }
+
   let now=new Date();
+  let user=currentUser?currentUser.email:"Unknown";
 
-  let date = now.toLocaleDateString('en-IN');
-  let time = now.toLocaleTimeString();
-  let day  = now.toLocaleDateString('en-IN',{weekday:'long'});
-  let user = currentUser ? currentUser.email : "Unknown";
-
-  let total=0;
   let rows="";
+  let total=0;
 
   billItems.forEach(x=>{
     total+=x.total;
@@ -357,8 +369,7 @@ function printBill(){
         <td>${x.price}</td>
         <td>${x.qty}</td>
         <td>${x.total}</td>
-      </tr>
-    `;
+      </tr>`;
   });
 
   let w=window.open("");
@@ -368,34 +379,22 @@ function printBill(){
   <body>
   <h2 style="text-align:center">GIRI ENTERPRISES</h2>
 
-  <p style="text-align:center">
-  Address: Taluka-Latur, Dist-Latur - 413 512, Maharashtra, India
-  </p>
-
-  <hr>
-
-  <p><b>User:</b> ${user}</p>
-  <p><b>Date:</b> ${date}</p>
-  <p><b>Time:</b> ${time}</p>
-  <p><b>Day:</b> ${day}</p>
-
-  <hr>
+  <p>User: ${user}</p>
+  <p>${now.toLocaleString()}</p>
 
   <table border="1" width="100%">
   <tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr>
   ${rows}
   </table>
 
-  <h3 style="text-align:center">Total: ₹${total}</h3>
-  <h3 style="text-align:center">Thank You 🙏</h3>
+  <h3>Total: ₹${total}</h3>
 
   <script>
-    window.onload=function(){ window.print(); }
+    window.print();
   <\/script>
 
   </body>
-  </html>
-  `);
+  </html>`);
 
   w.document.close();
 }
