@@ -1,170 +1,49 @@
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Giri Enterprises System</title>
+# 🏪 Giri Enterprises POS System
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+A web-based POS (Point of Sale) system built using **HTML + Firebase**.
 
-<style>
-body{margin:0;font-family:Arial;background:#eef2f7}
+---
 
-/* WELCOME */
-#welcome{
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
-  background:#2c3e50;
-  color:white;
-}
+## 🚀 Features
 
-button{
-  padding:12px;
-  margin:10px;
-  width:180px;
-  cursor:pointer;
-}
+### 👑 Admin Features
+- Admin login
+- Create up to 20 employees
+- View all users
+- Search bills
+- Edit / manage billing data
 
-/* LOGIN */
-#loginBox{
-  display:none;
-  height:100vh;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
-  background:#34495e;
-  color:white;
-}
+### 👨‍💼 Employee Features
+- Login system
+- Create bills
+- Add items
+- Edit items before saving
+- Save bill to database
 
-.card{
-  background:white;
-  color:black;
-  padding:20px;
-  border-radius:10px;
-  width:280px;
-}
+---
 
-/* APP */
-#app{
-  display:none;
-  padding:10px;
-}
-</style>
-</head>
+## 🛠️ Tech Stack
 
-<body>
+- HTML
+- CSS
+- JavaScript
+- Firebase Authentication
+- Firebase Firestore
 
-<!-- WELCOME PAGE -->
-<div id="welcome">
-<h1>Welcome System</h1>
+---
 
-<button onclick="openLogin('admin')">Admin Login</button>
-<button onclick="openLogin('user')">User Login</button>
-</div>
+## 🔐 Role System
 
-<!-- LOGIN PAGE -->
-<div id="loginBox">
-<div class="card">
+| Role | Access |
+|------|--------|
+| Admin | Full control (users + bills) |
+| Employee | Billing only |
 
-<h3 id="title">Login</h3>
+---
 
-<input id="email" placeholder="Email"><br><br>
-<input id="pass" type="password" placeholder="Password"><br><br>
+## 📦 Firebase Setup
 
-<button onclick="login()">Login</button>
-<button onclick="back()">Back</button>
-
-</div>
-</div>
-
-<!-- APP -->
-<div id="app">
-<h2 id="dashboardTitle"></h2>
-<p>Dashboard Loaded Successfully</p>
-</div>
-
-<script>
-
-/* FIREBASE INIT */
-const firebaseConfig = {
-  apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
-  authDomain: "giri-enterprises-pos.firebaseapp.com",
-  databaseURL: "https://giri-enterprises-pos-default-rtdb.firebaseio.com",
-  projectId: "giri-enterprises-pos",
-  storageBucket: "giri-enterprises-pos.firebasestorage.app",
-  messagingSenderId: "287416000311",
-  appId: "1:287416000311:web:353a28d193e6739aa384b2",
-  measurementId: "G-NX7N5JDKP6"
-};
-
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
-
-let selectedRole = "";
-
-/* OPEN LOGIN */
-function openLogin(type){
-  console.log("Login clicked:", type);
-
-  selectedRole = type;
-
-  document.getElementById("welcome").style.display="none";
-  document.getElementById("loginBox").style.display="flex";
-
-  document.getElementById("title").innerText =
-    type === "admin" ? "Admin Login" : "User Login";
-}
-
-/* BACK */
-function back(){
-  document.getElementById("loginBox").style.display="none";
-  document.getElementById("welcome").style.display="flex";
-}
-
-/* LOGIN */
-async function login(){
-  try{
-
-    let email = document.getElementById("email").value;
-    let pass = document.getElementById("pass").value;
-
-    let res = await auth.signInWithEmailAndPassword(email, pass);
-
-    let uid = res.user.uid;
-
-    let doc = await db.collection("users").doc(uid).get();
-
-    if(!doc.exists){
-      alert("User not found in database");
-      return;
-    }
-
-    let role = doc.data().role;
-
-    if(role !== selectedRole){
-      alert("Wrong role selected");
-      await auth.signOut();
-      return;
-    }
-
-    document.getElementById("loginBox").style.display="none";
-    document.getElementById("app").style.display="block";
-
-    document.getElementById("dashboardTitle").innerText =
-      role.toUpperCase() + " DASHBOARD";
-
-  } catch(err){
-    console.error(err);
-    alert(err.message);
-  }
-}
-
-</script>
-
-</body>
-</html>
+1. Create project in Firebase
+2. Enable Authentication (Email/Password)
+3. Create Firestore Database
+4. Add users collection:
