@@ -89,9 +89,10 @@ td,th{border:1px solid #ccc;padding:6px;text-align:center;}
 
 </div>
 
-<marquee style="background:#2c3e50;color:white;padding:8px;">
-© Created by Anil Giri
-</marquee>
+<footer style="text-align:center; margin:20px; color:gray;">
+  <p>© 2026 Anil Giri. All rights reserved.</p>
+  <marquee><p style="color:green; font-weight:bold;">Page created by Anil Giri</p></marquee>
+</footer>
 
 <script>
 
