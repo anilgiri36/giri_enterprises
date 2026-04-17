@@ -14,10 +14,8 @@ body{
   font-family:Arial;
   background:linear-gradient(135deg,#1e3c72,#2a5298);
   color:#fff;
-  padding-bottom:90px;
+  padding-bottom:80px;
 }
-
-#loginPage,#app,#adminPanel{display:none}
 
 .center{
   height:100vh;
@@ -26,6 +24,8 @@ body{
   align-items:center;
   flex-direction:column;
 }
+
+#loginPage,#app,#adminPanel{display:none}
 
 button{
   padding:10px;
@@ -43,8 +43,7 @@ button{
   background:#fff;
   color:#000;
   padding:20px;
-  border-radius:12px;
-  width:320px;
+  border-radius:10px;
 }
 
 .section{
@@ -52,7 +51,7 @@ button{
   color:#000;
   margin:10px;
   padding:15px;
-  border-radius:12px;
+  border-radius:10px;
 }
 
 input,select{
@@ -103,7 +102,6 @@ footer{
   color:gray;
   text-align:center;
   padding:8px;
-  z-index:9999;
 }
 
 </style>
@@ -112,23 +110,19 @@ footer{
 <body>
 
 <!-- WELCOME -->
-<div id="welcome" class="center" style="display:flex">
-<h1>🏪 Giri Enterprises POS</h1>
-<button onclick="openLogin('admin')">Admin Login</button>
-<button onclick="openLogin('employee')">Employee Login</button>
+<div id="welcome" class="center">
+<h1>Giri Enterprises POS</h1>
+<button onclick="openLogin()">Login</button>
 </div>
 
 <!-- LOGIN -->
 <div id="loginPage" class="center">
 <div class="card">
-<h2 id="loginTitle">LOGIN</h2>
-
+<h2>LOGIN</h2>
 <input id="email" placeholder="Email">
 <input id="pass" type="password" placeholder="Password">
-
 <button onclick="login()">Login</button>
 <button onclick="back()">Back</button>
-
 </div>
 </div>
 
@@ -139,21 +133,10 @@ footer{
 <button onclick="logout()" style="background:red;color:#fff;width:120px;">Sign Out</button>
 </div>
 
-<!-- ADMIN -->
+<!-- ADMIN PANEL -->
 <div id="adminPanel" class="section">
-<h2>Admin Panel</h2>
-
-<input id="newEmail" placeholder="Email">
-<input id="newPass" placeholder="Password">
-
-<select id="newRole">
-<option value="employee">Employee</option>
-<option value="admin">Admin</option>
-</select>
-
-<button onclick="createUser()">Create User</button>
-
-<ul id="userList"></ul>
+<h3>Admin Panel</h3>
+<p>User management can be added later</p>
 </div>
 
 <!-- BILLING -->
@@ -176,7 +159,7 @@ footer{
 
 <h3>Total: ₹<span id="total">0</span></h3>
 
-<button onclick="printBill()">Print / PDF</button>
+<button onclick="printBill()">Print Bill</button>
 
 </div>
 </div>
@@ -184,21 +167,23 @@ footer{
 <!-- FOOTER -->
 <footer>
   <p>© 2026 Anil Giri. All rights reserved.</p>
+  <marquee>
+    <p style="color:green;font-weight:bold;">
+      Page created by Anil Giri
+    </p>
+  </marquee>
 </footer>
 
 <script>
 
 /* FIREBASE */
-const firebaseConfig = {
+firebase.initializeApp({
   apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
   authDomain: "giri-enterprises-pos.firebaseapp.com",
   databaseURL: "https://giri-enterprises-pos-default-rtdb.firebaseio.com",
   projectId: "giri-enterprises-pos",
-  storageBucket: "giri-enterprises-pos.firebasestorage.app",
-  messagingSenderId: "287416000311",
-  appId: "1:287416000311:web:353a28d193e6739aa384b2",
-  measurementId: "G-NX7N5JDKP6"
-};
+  storageBucket: "giri-enterprises-pos.appspot.com"
+});
 
 const auth = firebase.auth();
 const db = firebase.database();
@@ -208,28 +193,19 @@ let billItems=[];
 
 /* CLOCK */
 function updateClock(){
-  const el=document.getElementById("clockBox");
-  if(!el) return;
-
   const now=new Date();
-
-  const date=now.toLocaleDateString('en-IN',{
-    weekday:'long', year:'numeric', month:'long', day:'numeric'
-  });
-
-  const time=now.toLocaleTimeString('en-IN');
-
-  el.innerHTML=`📅 ${date} | ⏰ ${time}`;
+  document.getElementById("clockBox").innerHTML =
+    "📅 " + now.toLocaleDateString('en-IN') +
+    " | ⏰ " + now.toLocaleTimeString('en-IN') +
+    " | 📆 " + now.toLocaleDateString('en-IN',{weekday:'long'});
 }
-
 setInterval(updateClock,1000);
 window.addEventListener("load",updateClock);
 
 /* NAV */
-function openLogin(role){
+function openLogin(){
   document.getElementById("welcome").style.display="none";
   document.getElementById("loginPage").style.display="flex";
-  document.getElementById("loginTitle").innerText=role.toUpperCase()+" LOGIN";
 }
 
 function back(){
@@ -239,24 +215,26 @@ function back(){
 
 /* LOGIN */
 function login(){
+
   let email=document.getElementById("email").value.trim();
   let pass=document.getElementById("pass").value.trim();
 
   auth.signInWithEmailAndPassword(email,pass)
   .then(res=>{
-    db.ref("users/"+res.user.uid).once("value").then(snap=>{
+
+    db.ref("users/"+res.user.uid).once("value")
+    .then(snap=>{
+
       currentUser=snap.val();
 
       document.getElementById("loginPage").style.display="none";
       document.getElementById("app").style.display="block";
 
-      document.getElementById("userInfo").innerText=
-      `User: ${currentUser.email} (${currentUser.role})`;
+      document.getElementById("userInfo").innerText =
+        "User: " + currentUser.email + " (" + currentUser.role + ")";
 
-      if(currentUser.role==="admin"){
-        document.getElementById("adminPanel").style.display="block";
-      }
     });
+
   })
   .catch(e=>alert(e.message));
 }
@@ -273,14 +251,9 @@ function addItem(){
   let price=Number(document.getElementById("price").value);
   let qty=Number(document.getElementById("qty").value);
 
-  if(!item || price<=0 || qty<=0 || isNaN(price) || isNaN(qty)){
-    alert("Enter valid data");
-    return;
-  }
+  if(!item || price<=0 || qty<=0) return;
 
-  billItems.push({
-    item, price, qty, total:price*qty
-  });
+  billItems.push({item,price,qty,total:price*qty});
 
   document.getElementById("item").value="";
   document.getElementById("price").value="";
@@ -289,10 +262,8 @@ function addItem(){
   render();
 }
 
-/* RENDER (FIXED BUTTONS) */
+/* RENDER */
 function render(){
-
-  let table=document.getElementById("billTable");
 
   let html=`
   <tr>
@@ -317,7 +288,7 @@ function render(){
     </tr>`;
   });
 
-  table.innerHTML=html;
+  document.getElementById("billTable").innerHTML=html;
   document.getElementById("total").innerText=total;
 }
 
@@ -328,8 +299,6 @@ function editItem(i){
   let item=prompt("Item",x.item);
   let price=Number(prompt("Price",x.price));
   let qty=Number(prompt("Qty",x.qty));
-
-  if(!item || isNaN(price) || isNaN(qty)) return;
 
   billItems[i]={item,price,qty,total:price*qty};
   render();
@@ -353,11 +322,6 @@ function clearAllItems(){
 
 /* PRINT */
 function printBill(){
-
-  if(billItems.length===0){
-    alert("No items");
-    return;
-  }
 
   let now=new Date();
   let user=currentUser?currentUser.email:"Unknown";
