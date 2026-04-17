@@ -1,14 +1,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Role Based POS System</title>
+<title>Giri Enterprises System</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#f2f6ff}
+body{margin:0;font-family:Arial;background:#eef2f7}
 
 /* WELCOME */
 #welcome{
@@ -22,9 +22,9 @@ body{margin:0;font-family:Arial;background:#f2f6ff}
 }
 
 button{
-  padding:10px;
+  padding:12px;
   margin:10px;
-  width:200px;
+  width:180px;
   cursor:pointer;
 }
 
@@ -47,124 +47,87 @@ button{
   width:280px;
 }
 
-/* DASHBOARD */
+/* APP */
 #app{
   display:none;
   padding:10px;
 }
-
-.section{
-  background:white;
-  margin:10px;
-  padding:15px;
-  border-radius:10px;
-}
-
-input,select{
-  padding:8px;
-  margin:5px;
-  width:90%;
-}
-
-.btn{
-  background:#2980b9;
-  color:white;
-  border:none;
-}
-.delete{background:red}
-.update{background:orange}
 </style>
 </head>
 
 <body>
 
-<!-- WELCOME -->
+<!-- WELCOME PAGE -->
 <div id="welcome">
 <h1>Welcome System</h1>
+
 <button onclick="openLogin('admin')">Admin Login</button>
 <button onclick="openLogin('user')">User Login</button>
 </div>
 
-<!-- LOGIN -->
+<!-- LOGIN PAGE -->
 <div id="loginBox">
 <div class="card">
-<h3 id="title"></h3>
 
-<input id="email" placeholder="Email">
-<input id="pass" type="password" placeholder="Password">
+<h3 id="title">Login</h3>
+
+<input id="email" placeholder="Email"><br><br>
+<input id="pass" type="password" placeholder="Password"><br><br>
 
 <button onclick="login()">Login</button>
 <button onclick="back()">Back</button>
+
 </div>
 </div>
 
-<!-- DASHBOARD -->
+<!-- APP -->
 <div id="app">
-
-<!-- ADMIN PANEL -->
-<div id="adminPanel" class="section">
-<h2>Admin Panel</h2>
-
-<input id="newEmail" placeholder="User Email">
-<input id="newPass" placeholder="Password">
-
-<select id="role">
-<option value="user">User</option>
-<option value="admin">Admin</option>
-</select>
-
-<button class="btn" onclick="createUser()">Create User</button>
-
-<h3>Users</h3>
-<ul id="userList"></ul>
-</div>
-
-<!-- USER AREA -->
-<div class="section">
-<h2>User Area</h2>
-<p>Limited access dashboard</p>
-</div>
-
+<h2 id="dashboardTitle"></h2>
+<p>Dashboard Loaded Successfully</p>
 </div>
 
 <script>
 
-/* FIREBASE CONFIG */
-const firebaseConfig = {
-  apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
-  authDomain: "giri-enterprises-pos.firebaseapp.com",
-  databaseURL: "https://giri-enterprises-pos-default-rtdb.firebaseio.com",
-  projectId: "giri-enterprises-pos",
-  storageBucket: "giri-enterprises-pos.firebasestorage.app",
-  messagingSenderId: "287416000311",
-  appId: "1:287416000311:web:353a28d193e6739aa384b2",
-  measurementId: "G-NX7N5JDKP6"
-};
+/* FIREBASE INIT */
+firebase.initializeApp({
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID"
+});
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 let selectedRole = "";
 
-/* NAVIGATION */
+/* OPEN LOGIN */
 function openLogin(type){
+  console.log("Login clicked:", type);
+
   selectedRole = type;
-  welcome.style.display="none";
-  loginBox.style.display="flex";
-  title.innerText = type.toUpperCase()+" LOGIN";
+
+  document.getElementById("welcome").style.display="none";
+  document.getElementById("loginBox").style.display="flex";
+
+  document.getElementById("title").innerText =
+    type === "admin" ? "Admin Login" : "User Login";
 }
 
+/* BACK */
 function back(){
-  loginBox.style.display="none";
-  welcome.style.display="flex";
+  document.getElementById("loginBox").style.display="none";
+  document.getElementById("welcome").style.display="flex";
 }
 
 /* LOGIN */
 async function login(){
   try{
 
-    let res = await auth.signInWithEmailAndPassword(email.value, pass.value);
+    let email = document.getElementById("email").value;
+    let pass = document.getElementById("pass").value;
+
+    let res = await auth.signInWithEmailAndPassword(email, pass);
+
     let uid = res.user.uid;
 
     let doc = await db.collection("users").doc(uid).get();
@@ -182,46 +145,16 @@ async function login(){
       return;
     }
 
-    loginBox.style.display="none";
-    app.style.display="block";
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("app").style.display="block";
 
-    if(role !== "admin"){
-      adminPanel.style.display="none";
-    } else {
-      loadUsers();
-    }
+    document.getElementById("dashboardTitle").innerText =
+      role.toUpperCase() + " DASHBOARD";
 
-  }catch(e){
-    alert(e.message);
+  } catch(err){
+    console.error(err);
+    alert(err.message);
   }
-}
-
-/* CREATE USER (ADMIN ONLY) */
-async function createUser(){
-
-  let u = await auth.createUserWithEmailAndPassword(newEmail.value, newPass.value);
-
-  await db.collection("users").doc(u.user.uid).set({
-    email: newEmail.value,
-    role: role.value
-  });
-
-  alert("User Created");
-  loadUsers();
-}
-
-/* LOAD USERS */
-async function loadUsers(){
-  let snap = await db.collection("users").get();
-
-  userList.innerHTML="";
-
-  snap.forEach(d=>{
-    userList.innerHTML += `
-      <li>
-        ${d.data().email} (${d.data().role})
-      </li>`;
-  });
 }
 
 </script>
