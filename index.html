@@ -9,18 +9,14 @@
 
 <style>
 
-/* FORCE EVERYTHING HIDDEN INITIALLY */
-#loginPage, #app, #adminPanel, #welcome {
-  display: none;
-}
-
-/* UI DESIGN */
 body{
   margin:0;
   font-family:Arial;
   background:linear-gradient(135deg,#1e3c72,#2a5298);
   color:#fff;
 }
+
+.page{display:none}
 
 .center{
   height:100vh;
@@ -35,11 +31,11 @@ button{
   margin:5px;
   width:220px;
   background:#ffcc00;
+  color:#000;
   border:none;
   border-radius:6px;
   font-weight:bold;
   cursor:pointer;
-  color:#000;
 }
 
 .card{
@@ -91,14 +87,14 @@ tr:nth-child(even){
 <body>
 
 <!-- WELCOME -->
-<div id="welcome" class="center" style="display:flex">
+<div id="welcome" class="page center" style="display:flex">
 <h1>🏪 Giri Enterprises POS</h1>
 <button onclick="openLogin('admin')">Admin Login</button>
 <button onclick="openLogin('employee')">Employee Login</button>
 </div>
 
 <!-- LOGIN -->
-<div id="loginPage" class="center">
+<div id="loginPage" class="page center">
 <div class="card">
 <h2 id="title"></h2>
 <input id="email" placeholder="Email">
@@ -109,7 +105,7 @@ tr:nth-child(even){
 </div>
 
 <!-- APP -->
-<div id="app">
+<div id="app" class="page">
 
 <!-- ADMIN -->
 <div id="adminPanel" class="section" style="display:none">
@@ -134,7 +130,6 @@ tr:nth-child(even){
 
 <h2>Billing System</h2>
 
-<h4 id="liveTime"></h4>
 <h4 id="userInfo"></h4>
 
 <input id="item" placeholder="Item">
@@ -174,14 +169,6 @@ const db = firebase.database();
 let currentUser=null;
 let billItems=[];
 let total=0;
-
-/* SAFE START */
-window.onload=function(){
-  document.getElementById("welcome").style.display="flex";
-  document.getElementById("loginPage").style.display="none";
-  document.getElementById("app").style.display="none";
-  document.getElementById("adminPanel").style.display="none";
-};
 
 /* NAV */
 function openLogin(role){
@@ -250,19 +237,34 @@ function loadUsers(){
   });
 }
 
-/* BILL */
+/* ADD ITEM - FIXED */
 function addItem(){
 
-  let t=Number(price.value)*Number(qty.value);
+  let i=document.getElementById("item");
+  let p=document.getElementById("price");
+  let q=document.getElementById("qty");
+
+  let item=i.value.trim();
+  let price=Number(p.value);
+  let qty=Number(q.value);
+
+  if(item==="" || isNaN(price) || isNaN(qty) || price<=0 || qty<=0){
+    alert("Enter valid item, price and qty");
+    return;
+  }
+
+  let t=price*qty;
 
   billItems.push({
-    item:item.value,
-    price:Number(price.value),
-    qty:Number(qty.value),
+    item,
+    price,
+    qty,
     total:t
   });
 
-  item.value=""; price.value=""; qty.value="";
+  i.value=""; p.value=""; q.value="";
+  i.focus();
+
   render();
 }
 
@@ -298,13 +300,45 @@ function render(){
   document.getElementById("total").innerText=total;
 }
 
-/* DELETE ALL */
+/* EDIT FIXED */
+function editItem(i){
+
+  let x=billItems[i];
+
+  let item=prompt("Item",x.item);
+  let price=prompt("Price",x.price);
+  let qty=prompt("Qty",x.qty);
+
+  if(!item || !price || !qty) return;
+
+  price=Number(price);
+  qty=Number(qty);
+
+  if(item.trim()==="" || isNaN(price) || isNaN(qty)) return;
+
+  billItems[i]={
+    item:item.trim(),
+    price,
+    qty,
+    total:price*qty
+  };
+
+  render();
+}
+
+/* DELETE */
+function deleteItem(i){
+  billItems.splice(i,1);
+  render();
+}
+
+/* CLEAR ALL */
 function clearAllItems(){
   billItems=[];
   render();
 }
 
-/* PRINT WITH DATE TIME */
+/* PRINT */
 function printBill(){
 
   let now=new Date();
@@ -328,6 +362,7 @@ function printBill(){
   <html>
   <body>
   <h2 style="text-align:center">GIRI ENTERPRISES</h2>
+
   <h4 style="text-align:center">
   Address: Taluka-Latur, Dist-Latur - 413 512, Maharashtra, India
   </h4>
