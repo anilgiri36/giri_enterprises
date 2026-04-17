@@ -17,7 +17,6 @@ body{
   padding-bottom:80px;
 }
 
-/* hide pages initially */
 #loginPage,#app,#adminPanel{display:none}
 
 .center{
@@ -101,19 +100,17 @@ footer{
 
 <body>
 
-<!-- ✅ WELCOME PAGE (RESTORED) -->
+<!-- WELCOME -->
 <div id="welcome" class="center" style="display:flex">
 <h1>🏪 Giri Enterprises POS</h1>
-
 <button onclick="openLogin('admin')">Admin Login</button>
 <button onclick="openLogin('employee')">Employee Login</button>
-
 </div>
 
-<!-- LOGIN PAGE -->
+<!-- LOGIN -->
 <div id="loginPage" class="center">
 <div class="card">
-<h2 id="loginTitle">Login</h2>
+<h2 id="loginTitle">LOGIN</h2>
 
 <input id="email" placeholder="Email">
 <input id="pass" type="password" placeholder="Password">
@@ -128,11 +125,10 @@ footer{
 <div id="app">
 
 <div style="text-align:right;padding:10px;">
-<button onclick="logout()" style="background:#e74c3c;color:#fff;width:120px;">
-Sign Out
-</button>
+<button onclick="logout()" style="background:red;color:#fff;width:120px;">Sign Out</button>
 </div>
 
+<!-- ADMIN -->
 <div id="adminPanel" class="section">
 <h2>Admin Panel</h2>
 
@@ -149,6 +145,7 @@ Sign Out
 <ul id="userList"></ul>
 </div>
 
+<!-- BILLING -->
 <div class="section">
 <h2>Billing System</h2>
 
@@ -169,13 +166,12 @@ Sign Out
 
 <h3>Total: ₹<span id="total">0</span></h3>
 
-<button onclick="saveBill()">Save Bill</button>
 <button onclick="printBill()">Print / PDF</button>
 
 </div>
 </div>
 
-<!-- FOOTER (SAFE ADDITION ONLY) -->
+<!-- FOOTER (SAFE) -->
 <footer>
   <p>© 2026 Anil Giri. All rights reserved.</p>
 
@@ -188,6 +184,7 @@ Sign Out
 
 <script>
 
+/* FIREBASE */
 firebase.initializeApp({
   apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
   authDomain: "giri-enterprises-pos.firebaseapp.com",
@@ -198,18 +195,16 @@ firebase.initializeApp({
 const auth = firebase.auth();
 const db = firebase.database();
 
-let currentUser=null;
-let billItems=[];
-let total=0;
+let currentUser = null;
+let billItems = [];
 
-/* OPEN LOGIN WITH ROLE */
+/* NAV */
 function openLogin(role){
   document.getElementById("welcome").style.display="none";
   document.getElementById("loginPage").style.display="flex";
-  document.getElementById("loginTitle").innerText=role.toUpperCase()+" LOGIN";
+  document.getElementById("loginTitle").innerText = role.toUpperCase()+" LOGIN";
 }
 
-/* BACK */
 function back(){
   document.getElementById("loginPage").style.display="none";
   document.getElementById("welcome").style.display="flex";
@@ -218,18 +213,21 @@ function back(){
 /* LOGIN */
 function login(){
 
-  auth.signInWithEmailAndPassword(email.value, pass.value)
+  let email = document.getElementById("email").value.trim();
+  let pass = document.getElementById("pass").value.trim();
+
+  auth.signInWithEmailAndPassword(email, pass)
   .then(res=>{
 
     db.ref("users/"+res.user.uid).once("value").then(snap=>{
 
-      currentUser=snap.val();
+      currentUser = snap.val();
 
       document.getElementById("loginPage").style.display="none";
       document.getElementById("app").style.display="block";
 
-      document.getElementById("userInfo").innerText=
-      `Logged in as: ${currentUser.email} (${currentUser.role})`;
+      document.getElementById("userInfo").innerText =
+      "Logged in as: " + currentUser.email + " (" + currentUser.role + ")";
 
       if(currentUser.role==="admin"){
         document.getElementById("adminPanel").style.display="block";
@@ -244,12 +242,146 @@ function login(){
 
 /* LOGOUT */
 function logout(){
-  auth.signOut().then(()=>{
-    location.reload();
+  auth.signOut().then(()=>location.reload());
+}
+
+/* CREATE USER */
+function createUser(){
+
+  let email = document.getElementById("newEmail").value.trim();
+  let pass = document.getElementById("newPass").value.trim();
+  let role = document.getElementById("newRole").value;
+
+  auth.createUserWithEmailAndPassword(email, pass)
+  .then(res=>{
+
+    db.ref("users/"+res.user.uid).set({
+      email,
+      role
+    });
+
+    alert("User created ✔");
+    loadUsers();
+
   });
 }
 
-/* ALL OTHER FUNCTIONS REMAIN SAME (billing, edit, delete, print etc.) */
+/* LOAD USERS */
+function loadUsers(){
+  db.ref("users").once("value",snap=>{
+    let list = document.getElementById("userList");
+    list.innerHTML="";
+
+    snap.forEach(s=>{
+      list.innerHTML += `
+        <li>
+          ${s.val().email} (${s.val().role})
+          <button onclick="deleteUser('${s.key}')"
+          style="background:red;color:#fff;width:80px;">
+          Delete
+          </button>
+        </li>
+      `;
+    });
+  });
+}
+
+/* DELETE USER */
+function deleteUser(uid){
+  if(confirm("Delete user?")){
+    db.ref("users/"+uid).remove().then(loadUsers);
+  }
+}
+
+/* ADD ITEM (FINAL FIX) */
+function addItem(){
+
+  let item = document.getElementById("item").value.trim();
+  let price = Number(document.getElementById("price").value);
+  let qty = Number(document.getElementById("qty").value);
+
+  if(!item || price<=0 || qty<=0 || isNaN(price) || isNaN(qty)){
+    alert("Enter valid item, price, qty");
+    return;
+  }
+
+  billItems.push({
+    item,
+    price,
+    qty,
+    total: price * qty
+  });
+
+  document.getElementById("item").value="";
+  document.getElementById("price").value="";
+  document.getElementById("qty").value="";
+
+  render();
+}
+
+/* RENDER */
+function render(){
+
+  let table = document.getElementById("billTable");
+
+  table.innerHTML = `
+  <tr>
+    <th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th>Action</th>
+  </tr>`;
+
+  let total = 0;
+
+  billItems.forEach((x,i)=>{
+    total += x.total;
+
+    table.innerHTML += `
+      <tr>
+        <td>${x.item}</td>
+        <td>${x.price}</td>
+        <td>${x.qty}</td>
+        <td>${x.total}</td>
+        <td>
+          <button onclick="editItem(${i})">Edit</button>
+          <button onclick="deleteItem(${i})">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("total").innerText = total;
+}
+
+/* EDIT */
+function editItem(i){
+  let x = billItems[i];
+
+  let item = prompt("Item", x.item);
+  let price = Number(prompt("Price", x.price));
+  let qty = Number(prompt("Qty", x.qty));
+
+  if(!item || isNaN(price) || isNaN(qty)) return;
+
+  billItems[i] = {
+    item,
+    price,
+    qty,
+    total: price * qty
+  };
+
+  render();
+}
+
+/* DELETE */
+function deleteItem(i){
+  billItems.splice(i,1);
+  render();
+}
+
+/* CLEAR */
+function clearAllItems(){
+  billItems = [];
+  render();
+}
 
 </script>
 
