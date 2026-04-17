@@ -8,13 +8,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
+
 body{
   margin:0;
   font-family:Arial;
   background:linear-gradient(135deg,#1e3c72,#2a5298);
   color:#fff;
-  padding-bottom:80px;
+  padding-bottom:90px;
 }
+
+#loginPage,#app,#adminPanel{display:none}
 
 .center{
   height:100vh;
@@ -23,8 +26,6 @@ body{
   align-items:center;
   flex-direction:column;
 }
-
-#loginPage,#app,#adminPanel{display:none}
 
 button{
   padding:10px;
@@ -42,7 +43,8 @@ button{
   background:#fff;
   color:#000;
   padding:20px;
-  border-radius:10px;
+  border-radius:12px;
+  width:320px;
 }
 
 .section{
@@ -50,7 +52,7 @@ button{
   color:#000;
   margin:10px;
   padding:15px;
-  border-radius:10px;
+  border-radius:12px;
 }
 
 input,select{
@@ -76,33 +78,47 @@ td{
   padding:6px;
 }
 
+tr:nth-child(even){
+  background:#f2f6ff;
+}
+
+/* CLOCK */
+#clockBox{
+  background:#111;
+  padding:10px;
+  text-align:center;
+  border-radius:8px;
+  margin-bottom:10px;
+}
+
+/* FOOTER */
 footer{
   position:fixed;
   bottom:0;
+  left:0;
   width:100%;
   background:#111;
   color:gray;
   text-align:center;
   padding:8px;
+  z-index:9999;
 }
+
 </style>
 </head>
 
 <body>
 
 <!-- WELCOME -->
-<div id="welcome" class="center">
-<h1>Giri Enterprises POS</h1>
-
+<div id="welcome" class="center" style="display:flex">
+<h1>🏪 Giri Enterprises POS</h1>
 <button onclick="openLogin('admin')">Admin Login</button>
 <button onclick="openLogin('employee')">Employee Login</button>
-
 </div>
 
 <!-- LOGIN -->
 <div id="loginPage" class="center">
 <div class="card">
-
 <h2 id="loginTitle">LOGIN</h2>
 
 <input id="email" placeholder="Email">
@@ -117,27 +133,25 @@ footer{
 <!-- APP -->
 <div id="app">
 
-<div style="text-align:right;">
+<div style="text-align:right;padding:10px;">
 <button onclick="logout()" style="background:red;color:#fff;width:120px;">Sign Out</button>
 </div>
 
-<!-- ADMIN PANEL -->
+<!-- ADMIN -->
 <div id="adminPanel" class="section">
-<h2>Admin User Management</h2>
+<h2>Admin Panel</h2>
 
-<input id="newEmail" placeholder="New User Email">
-<input id="newPass" type="password" placeholder="Password">
+<input id="newEmail" placeholder="Email">
+<input id="newPass" placeholder="Password">
 
 <select id="newRole">
-  <option value="employee">Employee</option>
-  <option value="admin">Admin</option>
+<option value="employee">Employee</option>
+<option value="admin">Admin</option>
 </select>
 
-<button onclick="createUser()">Add User</button>
+<button onclick="createUser()">Create User</button>
 
-<h3>Users List</h3>
 <ul id="userList"></ul>
-
 </div>
 
 <!-- BILLING -->
@@ -145,46 +159,74 @@ footer{
 
 <h2>Billing System</h2>
 
+<!-- LIVE CLOCK -->
+<div id="clockBox"></div>
+
+<h4 id="userInfo"></h4>
+
 <input id="item" placeholder="Item">
 <input id="price" placeholder="Price">
 <input id="qty" placeholder="Qty">
 
 <button onclick="addItem()">Add Item</button>
 <button onclick="clearAllItems()" style="background:red;color:#fff;">Delete All</button>
-<button onclick="printBill()">Print Bill</button>
 
-<table id="billTable"></table>
+<table id="billTable">
+<tr>
+<th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th>Action</th>
+</tr>
+</table>
 
 <h3>Total: ₹<span id="total">0</span></h3>
+
+<button onclick="printBill()">Print / PDF</button>
 
 </div>
 </div>
 
 <!-- FOOTER -->
 <footer>
-© 2026 Anil Giri. All rights reserved.
+  <p>© 2026 Anil Giri. All rights reserved.</p>
+
+  <marquee>
+    <p style="color:green;font-weight:bold;margin:0;">
+      Page created by Anil Giri
+    </p>
+  </marquee>
 </footer>
 
 <script>
 
+/* FIREBASE */
 firebase.initializeApp({
   apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
   authDomain: "giri-enterprises-pos.firebaseapp.com",
   databaseURL: "https://giri-enterprises-pos-default-rtdb.firebaseio.com",
-  projectId: "giri-enterprises-pos",
-  storageBucket: "giri-enterprises-pos.appspot.com"
+  projectId: "giri-enterprises-pos"
 });
 
 const auth = firebase.auth();
 const db = firebase.database();
 
 let currentUser=null;
-let selectedRole="";
 let billItems=[];
+
+/* CLOCK */
+function updateClock(){
+  let now = new Date();
+
+  let date = now.toLocaleDateString('en-IN');
+  let time = now.toLocaleTimeString();
+  let day  = now.toLocaleDateString('en-IN',{weekday:'long'});
+
+  document.getElementById("clockBox").innerHTML =
+    "📅 " + date + " | ⏰ " + time + " | 📆 " + day;
+}
+
+setInterval(updateClock,1000);
 
 /* NAV */
 function openLogin(role){
-  selectedRole=role;
   document.getElementById("welcome").style.display="none";
   document.getElementById("loginPage").style.display="flex";
   document.getElementById("loginTitle").innerText=role.toUpperCase()+" LOGIN";
@@ -204,23 +246,17 @@ function login(){
   auth.signInWithEmailAndPassword(email,pass)
   .then(res=>{
 
-    db.ref("users/"+res.user.uid).once("value")
-    .then(snap=>{
+    db.ref("users/"+res.user.uid).once("value").then(snap=>{
 
-      const data=snap.val();
-
-      if(selectedRole!==data.role){
-        alert("Access denied");
-        auth.signOut();
-        return;
-      }
-
-      currentUser=data;
+      currentUser=snap.val();
 
       document.getElementById("loginPage").style.display="none";
       document.getElementById("app").style.display="block";
 
-      if(data.role==="admin"){
+      document.getElementById("userInfo").innerText =
+      "User: " + currentUser.email + " (" + currentUser.role + ")";
+
+      if(currentUser.role==="admin"){
         document.getElementById("adminPanel").style.display="block";
         loadUsers();
       }
@@ -231,97 +267,133 @@ function login(){
   .catch(e=>alert(e.message));
 }
 
-/* CREATE USER (ADMIN ONLY) */
-function createUser(){
-
-  let email=document.getElementById("newEmail").value;
-  let pass=document.getElementById("newPass").value;
-  let role=document.getElementById("newRole").value;
-
-  auth.createUserWithEmailAndPassword(email,pass)
-  .then(res=>{
-
-    db.ref("users/"+res.user.uid).set({
-      email:email,
-      role:role
-    });
-
-    alert("User created");
-    loadUsers();
-
-  })
-  .catch(e=>alert(e.message));
+/* LOGOUT */
+function logout(){
+  auth.signOut().then(()=>location.reload());
 }
 
-/* LOAD USERS */
-function loadUsers(){
-
-  db.ref("users").once("value").then(snap=>{
-
-    let html="";
-
-    snap.forEach(child=>{
-
-      let u=child.val();
-
-      html+=`
-      <li>
-        ${u.email} (${u.role})
-        <button onclick="deleteUser('${child.key}')">Delete</button>
-      </li>`;
-    });
-
-    document.getElementById("userList").innerHTML=html;
-
-  });
-
-}
-
-/* DELETE USER */
-function deleteUser(uid){
-
-  if(confirm("Delete user?")){
-    db.ref("users/"+uid).remove();
-    loadUsers();
-  }
-}
-
-/* BILLING */
+/* ADD ITEM */
 function addItem(){
-  let item=document.getElementById("item").value;
+
+  let item=document.getElementById("item").value.trim();
   let price=Number(document.getElementById("price").value);
   let qty=Number(document.getElementById("qty").value);
 
-  billItems.push({item,price,qty,total:price*qty});
+  if(!item || price<=0 || qty<=0 || isNaN(price) || isNaN(qty)){
+    alert("Enter valid data");
+    return;
+  }
+
+  billItems.push({
+    item,
+    price,
+    qty,
+    total:price*qty
+  });
+
+  document.getElementById("item").value="";
+  document.getElementById("price").value="";
+  document.getElementById("qty").value="";
+
   render();
 }
 
+/* RENDER */
 function render(){
 
-  let total=0;
-  let html="<tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr>";
+  let table=document.getElementById("billTable");
 
-  billItems.forEach(x=>{
+  table.innerHTML=`
+  <tr>
+    <th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th>Action</th>
+  </tr>`;
+
+  let total=0;
+
+  billItems.forEach((x,i)=>{
     total+=x.total;
-    html+=`<tr><td>${x.item}</td><td>${x.price}</td><td>${x.qty}</td><td>${x.total}</td></tr>`;
+
+    table.innerHTML+=`
+      <tr>
+        <td>${x.item}</td>
+        <td>${x.price}</td>
+        <td>${x.qty}</td>
+        <td>${x.total}</td>
+        <td>
+          <button onclick="editItem(${i})">Edit</button>
+          <button onclick="deleteItem(${i})">Delete</button>
+        </td>
+      </tr>
+    `;
   });
 
-  document.getElementById("billTable").innerHTML=html;
   document.getElementById("total").innerText=total;
 }
 
-/* PRINT */
+/* PRINT WITH USER + DATE + TIME + DAY */
 function printBill(){
+
+  if(billItems.length===0){
+    alert("No items to print");
+    return;
+  }
+
+  let now=new Date();
+
+  let date = now.toLocaleDateString('en-IN');
+  let time = now.toLocaleTimeString();
+  let day  = now.toLocaleDateString('en-IN',{weekday:'long'});
+  let user = currentUser ? currentUser.email : "Unknown";
+
+  let total=0;
+  let rows="";
+
+  billItems.forEach(x=>{
+    total+=x.total;
+    rows+=`
+      <tr>
+        <td>${x.item}</td>
+        <td>${x.price}</td>
+        <td>${x.qty}</td>
+        <td>${x.total}</td>
+      </tr>
+    `;
+  });
 
   let w=window.open("");
 
   w.document.write(`
-  <h2>Giri Enterprises</h2>
-  <p>User: ${currentUser.email}</p>
+  <html>
+  <body>
+  <h2 style="text-align:center">GIRI ENTERPRISES</h2>
+
+  <p style="text-align:center">
+  Address: Taluka-Latur, Dist-Latur - 413 512, Maharashtra, India
+  </p>
+
+  <hr>
+
+  <p><b>User:</b> ${user}</p>
+  <p><b>Date:</b> ${date}</p>
+  <p><b>Time:</b> ${time}</p>
+  <p><b>Day:</b> ${day}</p>
+
+  <hr>
+
   <table border="1" width="100%">
-  ${document.getElementById("billTable").innerHTML}
+  <tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr>
+  ${rows}
   </table>
-  <script>window.print()<\/script>
+
+  <h3 style="text-align:center">Total: ₹${total}</h3>
+  <h3 style="text-align:center">Thank You 🙏</h3>
+
+  <script>
+    window.onload=function(){ window.print(); }
+  <\/script>
+
+  </body>
+  </html>
   `);
 
   w.document.close();
