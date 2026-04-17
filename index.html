@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -112,17 +113,24 @@ footer{
 <!-- WELCOME -->
 <div id="welcome" class="center">
 <h1>Giri Enterprises POS</h1>
-<button onclick="openLogin()">Login</button>
+
+<button onclick="openLogin('admin')">Admin Login</button>
+<button onclick="openLogin('employee')">Employee Login</button>
+
 </div>
 
 <!-- LOGIN -->
 <div id="loginPage" class="center">
 <div class="card">
-<h2>LOGIN</h2>
+
+<h2 id="loginTitle">LOGIN</h2>
+
 <input id="email" placeholder="Email">
 <input id="pass" type="password" placeholder="Password">
+
 <button onclick="login()">Login</button>
 <button onclick="back()">Back</button>
+
 </div>
 </div>
 
@@ -131,12 +139,6 @@ footer{
 
 <div style="text-align:right;padding:10px;">
 <button onclick="logout()" style="background:red;color:#fff;width:120px;">Sign Out</button>
-</div>
-
-<!-- ADMIN PANEL -->
-<div id="adminPanel" class="section">
-<h3>Admin Panel</h3>
-<p>User management can be added later</p>
 </div>
 
 <!-- BILLING -->
@@ -189,6 +191,7 @@ const auth = firebase.auth();
 const db = firebase.database();
 
 let currentUser=null;
+let selectedRole="";
 let billItems=[];
 
 /* CLOCK */
@@ -203,9 +206,11 @@ setInterval(updateClock,1000);
 window.addEventListener("load",updateClock);
 
 /* NAV */
-function openLogin(){
+function openLogin(role){
+  selectedRole = role;
   document.getElementById("welcome").style.display="none";
   document.getElementById("loginPage").style.display="flex";
+  document.getElementById("loginTitle").innerText = role.toUpperCase() + " LOGIN";
 }
 
 function back(){
@@ -225,7 +230,20 @@ function login(){
     db.ref("users/"+res.user.uid).once("value")
     .then(snap=>{
 
-      currentUser=snap.val();
+      if(!snap.exists()){
+        alert("User role not found");
+        return;
+      }
+
+      const data = snap.val();
+
+      if(selectedRole !== data.role){
+        alert("Access denied for " + selectedRole);
+        auth.signOut();
+        return;
+      }
+
+      currentUser=data;
 
       document.getElementById("loginPage").style.display="none";
       document.getElementById("app").style.display="block";
@@ -295,7 +313,6 @@ function render(){
 /* EDIT */
 function editItem(i){
   let x=billItems[i];
-
   let item=prompt("Item",x.item);
   let price=Number(prompt("Price",x.price));
   let qty=Number(prompt("Qty",x.qty));
@@ -346,7 +363,6 @@ function printBill(){
   <html>
   <body>
   <h2 style="text-align:center">GIRI ENTERPRISES</h2>
-
   <p>User: ${user}</p>
   <p>${now.toLocaleString()}</p>
 
@@ -360,7 +376,6 @@ function printBill(){
   <script>
     window.print();
   <\/script>
-
   </body>
   </html>`);
 
