@@ -14,7 +14,7 @@ body{
   font-family:Arial;
   background:linear-gradient(135deg,#1e3c72,#2a5298);
   color:#fff;
-  padding-bottom:80px;
+  padding-bottom:90px;
 }
 
 #loginPage,#app,#adminPanel{display:none}
@@ -82,6 +82,15 @@ tr:nth-child(even){
   background:#f2f6ff;
 }
 
+/* CLOCK */
+#clockBox{
+  background:#111;
+  padding:10px;
+  text-align:center;
+  border-radius:8px;
+  margin-bottom:10px;
+}
+
 /* FOOTER */
 footer{
   position:fixed;
@@ -147,7 +156,11 @@ footer{
 
 <!-- BILLING -->
 <div class="section">
+
 <h2>Billing System</h2>
+
+<!-- LIVE CLOCK -->
+<div id="clockBox"></div>
 
 <h4 id="userInfo"></h4>
 
@@ -171,7 +184,7 @@ footer{
 </div>
 </div>
 
-<!-- FOOTER (SAFE) -->
+<!-- FOOTER -->
 <footer>
   <p>© 2026 Anil Giri. All rights reserved.</p>
 
@@ -195,14 +208,28 @@ firebase.initializeApp({
 const auth = firebase.auth();
 const db = firebase.database();
 
-let currentUser = null;
-let billItems = [];
+let currentUser=null;
+let billItems=[];
+
+/* CLOCK */
+function updateClock(){
+  let now = new Date();
+
+  let date = now.toLocaleDateString('en-IN');
+  let time = now.toLocaleTimeString();
+  let day  = now.toLocaleDateString('en-IN',{weekday:'long'});
+
+  document.getElementById("clockBox").innerHTML =
+    "📅 " + date + " | ⏰ " + time + " | 📆 " + day;
+}
+
+setInterval(updateClock,1000);
 
 /* NAV */
 function openLogin(role){
   document.getElementById("welcome").style.display="none";
   document.getElementById("loginPage").style.display="flex";
-  document.getElementById("loginTitle").innerText = role.toUpperCase()+" LOGIN";
+  document.getElementById("loginTitle").innerText=role.toUpperCase()+" LOGIN";
 }
 
 function back(){
@@ -213,21 +240,21 @@ function back(){
 /* LOGIN */
 function login(){
 
-  let email = document.getElementById("email").value.trim();
-  let pass = document.getElementById("pass").value.trim();
+  let email=document.getElementById("email").value.trim();
+  let pass=document.getElementById("pass").value.trim();
 
-  auth.signInWithEmailAndPassword(email, pass)
+  auth.signInWithEmailAndPassword(email,pass)
   .then(res=>{
 
     db.ref("users/"+res.user.uid).once("value").then(snap=>{
 
-      currentUser = snap.val();
+      currentUser=snap.val();
 
       document.getElementById("loginPage").style.display="none";
       document.getElementById("app").style.display="block";
 
       document.getElementById("userInfo").innerText =
-      "Logged in as: " + currentUser.email + " (" + currentUser.role + ")";
+      "User: " + currentUser.email + " (" + currentUser.role + ")";
 
       if(currentUser.role==="admin"){
         document.getElementById("adminPanel").style.display="block";
@@ -245,63 +272,15 @@ function logout(){
   auth.signOut().then(()=>location.reload());
 }
 
-/* CREATE USER */
-function createUser(){
-
-  let email = document.getElementById("newEmail").value.trim();
-  let pass = document.getElementById("newPass").value.trim();
-  let role = document.getElementById("newRole").value;
-
-  auth.createUserWithEmailAndPassword(email, pass)
-  .then(res=>{
-
-    db.ref("users/"+res.user.uid).set({
-      email,
-      role
-    });
-
-    alert("User created ✔");
-    loadUsers();
-
-  });
-}
-
-/* LOAD USERS */
-function loadUsers(){
-  db.ref("users").once("value",snap=>{
-    let list = document.getElementById("userList");
-    list.innerHTML="";
-
-    snap.forEach(s=>{
-      list.innerHTML += `
-        <li>
-          ${s.val().email} (${s.val().role})
-          <button onclick="deleteUser('${s.key}')"
-          style="background:red;color:#fff;width:80px;">
-          Delete
-          </button>
-        </li>
-      `;
-    });
-  });
-}
-
-/* DELETE USER */
-function deleteUser(uid){
-  if(confirm("Delete user?")){
-    db.ref("users/"+uid).remove().then(loadUsers);
-  }
-}
-
-/* ADD ITEM (FINAL FIX) */
+/* ADD ITEM */
 function addItem(){
 
-  let item = document.getElementById("item").value.trim();
-  let price = Number(document.getElementById("price").value);
-  let qty = Number(document.getElementById("qty").value);
+  let item=document.getElementById("item").value.trim();
+  let price=Number(document.getElementById("price").value);
+  let qty=Number(document.getElementById("qty").value);
 
   if(!item || price<=0 || qty<=0 || isNaN(price) || isNaN(qty)){
-    alert("Enter valid item, price, qty");
+    alert("Enter valid data");
     return;
   }
 
@@ -309,7 +288,7 @@ function addItem(){
     item,
     price,
     qty,
-    total: price * qty
+    total:price*qty
   });
 
   document.getElementById("item").value="";
@@ -322,19 +301,19 @@ function addItem(){
 /* RENDER */
 function render(){
 
-  let table = document.getElementById("billTable");
+  let table=document.getElementById("billTable");
 
-  table.innerHTML = `
+  table.innerHTML=`
   <tr>
     <th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th>Action</th>
   </tr>`;
 
-  let total = 0;
+  let total=0;
 
   billItems.forEach((x,i)=>{
-    total += x.total;
+    total+=x.total;
 
-    table.innerHTML += `
+    table.innerHTML+=`
       <tr>
         <td>${x.item}</td>
         <td>${x.price}</td>
@@ -348,39 +327,76 @@ function render(){
     `;
   });
 
-  document.getElementById("total").innerText = total;
+  document.getElementById("total").innerText=total;
 }
 
-/* EDIT */
-function editItem(i){
-  let x = billItems[i];
+/* PRINT WITH USER + DATE + TIME + DAY */
+function printBill(){
 
-  let item = prompt("Item", x.item);
-  let price = Number(prompt("Price", x.price));
-  let qty = Number(prompt("Qty", x.qty));
+  if(billItems.length===0){
+    alert("No items to print");
+    return;
+  }
 
-  if(!item || isNaN(price) || isNaN(qty)) return;
+  let now=new Date();
 
-  billItems[i] = {
-    item,
-    price,
-    qty,
-    total: price * qty
-  };
+  let date = now.toLocaleDateString('en-IN');
+  let time = now.toLocaleTimeString();
+  let day  = now.toLocaleDateString('en-IN',{weekday:'long'});
+  let user = currentUser ? currentUser.email : "Unknown";
 
-  render();
-}
+  let total=0;
+  let rows="";
 
-/* DELETE */
-function deleteItem(i){
-  billItems.splice(i,1);
-  render();
-}
+  billItems.forEach(x=>{
+    total+=x.total;
+    rows+=`
+      <tr>
+        <td>${x.item}</td>
+        <td>${x.price}</td>
+        <td>${x.qty}</td>
+        <td>${x.total}</td>
+      </tr>
+    `;
+  });
 
-/* CLEAR */
-function clearAllItems(){
-  billItems = [];
-  render();
+  let w=window.open("");
+
+  w.document.write(`
+  <html>
+  <body>
+  <h2 style="text-align:center">GIRI ENTERPRISES</h2>
+
+  <p style="text-align:center">
+  Address: Taluka-Latur, Dist-Latur - 413 512, Maharashtra, India
+  </p>
+
+  <hr>
+
+  <p><b>User:</b> ${user}</p>
+  <p><b>Date:</b> ${date}</p>
+  <p><b>Time:</b> ${time}</p>
+  <p><b>Day:</b> ${day}</p>
+
+  <hr>
+
+  <table border="1" width="100%">
+  <tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr>
+  ${rows}
+  </table>
+
+  <h3 style="text-align:center">Total: ₹${total}</h3>
+  <h3 style="text-align:center">Thank You 🙏</h3>
+
+  <script>
+    window.onload=function(){ window.print(); }
+  <\/script>
+
+  </body>
+  </html>
+  `);
+
+  w.document.close();
 }
 
 </script>
