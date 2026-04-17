@@ -1,170 +1,65 @@
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Giri Enterprises POS</title>
 
+<!-- Firebase (COMPAT VERSION - IMPORTANT) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#eef2f7}
+body{margin:0;font-family:Arial;background:#2c3e50;color:white}
 
-/* TOP BAR */
-.topbar{
-  background:#1f3a5a;
-  color:white;
-  padding:12px;
-  text-align:center;
-  font-weight:bold;
-}
-
-/* WELCOME */
-#welcome{
+.center{
   height:100vh;
   display:flex;
+  justify-content:center;
+  align-items:center;
   flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  background:#2c3e50;
-  color:white;
-}
-
-/* LOGIN */
-#loginBox{
-  display:none;
-  height:100vh;
-  justify-content:center;
-  align-items:center;
-  background:#34495e;
-}
-
-.card{
-  background:white;
-  padding:20px;
-  border-radius:10px;
-  width:280px;
-}
-
-input,select{
-  width:90%;
-  padding:8px;
-  margin:5px;
 }
 
 button{
-  padding:10px;
-  margin:5px;
+  padding:12px;
+  margin:10px;
   width:200px;
   cursor:pointer;
-  border:none;
-  border-radius:5px;
 }
-
-.primary{background:#2980b9;color:white}
-.danger{background:#e74c3c;color:white}
-
-/* APP */
-#app{display:none;padding:10px}
-
-.section{
+.card{
   background:white;
-  margin:10px;
-  padding:15px;
+  color:black;
+  padding:20px;
   border-radius:10px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.1);
 }
-
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-td,th{
-  border:1px solid #ccc;
-  padding:6px;
-  text-align:center;
-}
+#app{display:none;color:black;background:#f2f2f2;height:100vh;padding:10px}
 </style>
 </head>
 
 <body>
 
-<div class="topbar">
-🏪 Giri Enterprises POS System
+<div id="welcome" class="center">
+<h1>Giri Enterprises</h1>
+<button onclick="openLogin('admin')">Admin Login</button>
+<button onclick="openLogin('employee')">Employee Login</button>
 </div>
 
-<!-- WELCOME -->
-<div id="welcome">
-<h1>Welcome</h1>
-<button class="primary" onclick="openLogin('admin')">Admin Login</button>
-<button class="primary" onclick="openLogin('employee')">Employee Login</button>
-</div>
-
-<!-- LOGIN -->
-<div id="loginBox">
+<div id="login" class="center" style="display:none">
 <div class="card">
 <h3 id="title"></h3>
-
-<input id="email" placeholder="Email">
-<input id="pass" type="password" placeholder="Password">
-
-<button class="primary" onclick="login()">Login</button>
+<input id="email" placeholder="Email"><br><br>
+<input id="pass" type="password" placeholder="Password"><br><br>
+<button onclick="login()">Login</button>
 <button onclick="back()">Back</button>
 </div>
 </div>
 
-<!-- APP -->
 <div id="app">
-
-<!-- ADMIN PANEL -->
-<div id="adminPanel" class="section">
-<h2>Admin Panel</h2>
-
-<input id="newEmail" placeholder="Email">
-<input id="newPass" placeholder="Password">
-
-<select id="role">
-<option value="employee">Employee</option>
-<option value="admin">Admin</option>
-</select>
-
-<button class="primary" onclick="createUser()">Create User</button>
-
-<h3>Users</h3>
-<ul id="userList"></ul>
-
-<h3>Search Bill</h3>
-<input id="searchBill" placeholder="Bill No">
-<button class="primary" onclick="findBill()">Search</button>
-<div id="billResult"></div>
-</div>
-
-<!-- BILLING -->
-<div class="section">
-<h2>Billing System</h2>
-
-<input id="item" placeholder="Item">
-<input id="price" placeholder="Price">
-<input id="qty" placeholder="Qty">
-
-<button class="primary" onclick="addItem()">Add Item</button>
-
-<table id="billTable">
-<tr>
-<th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th>Edit</th>
-</tr>
-</table>
-
-<h3>Total: ₹<span id="total">0</span></h3>
-
-<button class="primary" onclick="saveBill()">Save Bill</button>
-</div>
-
+<h2>Dashboard</h2>
+<h3 id="roleText"></h3>
 </div>
 
 <script>
-
 /* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBaTFSvArWkwktLcf71pm-lGLc7TmV56dU",
@@ -178,169 +73,41 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const auth = firebase.auth();
-const db = firebase.database();
+const db = firebase.firestore();
 
 let selectedRole = "";
-let total = 0;
 
-/* NAVIGATION */
-function openLogin(type){
-  selectedRole = type;
+/* OPEN LOGIN */
+function openLogin(role){
+  selectedRole = role;
   welcome.style.display="none";
-  loginBox.style.display="flex";
-  title.innerText = type.toUpperCase()+" LOGIN";
+  login.style.display="flex";
+  title.innerText = role.toUpperCase()+" LOGIN";
 }
 
+/* BACK */
 function back(){
-  loginBox.style.display="none";
+  login.style.display="none";
   welcome.style.display="flex";
 }
 
 /* LOGIN */
 async function login(){
+  try{
+    let res = await auth.signInWithEmailAndPassword(email.value, pass.value);
+    
+    document.getElementById("login").style.display="none";
+    document.getElementById("app").style.display="block";
+    
+    document.getElementById("roleText").innerText =
+      "Logged in as: " + selectedRole;
 
-  let res = await auth.signInWithEmailAndPassword(email.value, pass.value);
-  let uid = res.user.uid;
-
-  let doc = await db.collection("users").doc(uid).get();
-
-  if(!doc.exists){
-    alert("User not found");
-    return;
-  }
-
-  let role = doc.data().role;
-
-  if(role !== selectedRole){
-    alert("Wrong role selected");
-    return;
-  }
-
-  loginBox.style.display="none";
-  app.style.display="block";
-
-  if(role === "admin"){
-    adminPanel.style.display="block";
-    loadUsers();
-  } else {
-    adminPanel.style.display="none";
+  }catch(e){
+    alert(e.message);
   }
 }
-
-/* CREATE USER (MAX 20 EMPLOYEES) */
-async function createUser(){
-
-  let snap = await db.collection("users").get();
-  let emp = 0;
-
-  snap.forEach(d=>{
-    if(d.data().role === "employee") emp++;
-  });
-
-  if(role.value === "employee" && emp >= 20){
-    alert("Max 20 employees allowed");
-    return;
-  }
-
-  let u = await auth.createUserWithEmailAndPassword(newEmail.value, newPass.value);
-
-  await db.collection("users").doc(u.user.uid).set({
-    email: newEmail.value,
-    role: role.value
-  });
-
-  loadUsers();
-}
-
-/* LOAD USERS */
-async function loadUsers(){
-  let snap = await db.collection("users").get();
-  userList.innerHTML="";
-  snap.forEach(d=>{
-    userList.innerHTML += `<li>${d.data().email} (${d.data().role})</li>`;
-  });
-}
-
-/* ADD ITEM */
-function addItem(){
-
-  let item = document.getElementById("item").value;
-  let price = Number(document.getElementById("price").value);
-  let qty = Number(document.getElementById("qty").value);
-
-  let t = price * qty;
-
-  let row = billTable.insertRow();
-  row.innerHTML = `
-    <td>${item}</td>
-    <td>${price}</td>
-    <td>${qty}</td>
-    <td>${t}</td>
-    <td><button onclick="editRow(this)">Edit</button></td>
-  `;
-
-  total += t;
-  document.getElementById("total").innerText = total;
-}
-
-/* EMPLOYEE EDIT BEFORE SAVE */
-function editRow(btn){
-
-  let row = btn.parentNode.parentNode;
-
-  let item = prompt("Item", row.cells[0].innerText);
-  let price = prompt("Price", row.cells[1].innerText);
-  let qty = prompt("Qty", row.cells[2].innerText);
-
-  if(item){
-
-    row.cells[0].innerText = item;
-    row.cells[1].innerText = price;
-    row.cells[2].innerText = qty;
-    row.cells[3].innerText = price * qty;
-
-    recalc();
-  }
-}
-
-/* RECALC TOTAL */
-function recalc(){
-  total = 0;
-
-  document.querySelectorAll("#billTable tr").forEach((r,i)=>{
-    if(i===0) return;
-    total += Number(r.cells[3].innerText);
-  });
-
-  document.getElementById("total").innerText = total;
-}
-
-/* SAVE BILL */
-async function saveBill(){
-
-  let items = [];
-
-  document.querySelectorAll("#billTable tr").forEach((r,i)=>{
-    if(i===0) return;
-
-    items.push({
-      item:r.cells[0].innerText,
-      price:r.cells[1].innerText,
-      qty:r.cells[2].innerText,
-      total:r.cells[3].innerText
-    });
-  });
-
-  await db.collection("bills").add({
-    items: items,
-    total: total,
-    time: new Date().toISOString()
-  });
-
-  alert("Bill Saved ✔");
-}
-
 </script>
 
 </body>
