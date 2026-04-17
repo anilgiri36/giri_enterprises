@@ -82,13 +82,15 @@ tr:nth-child(even){
   background:#f2f6ff;
 }
 
-/* CLOCK */
+/* CLOCK FIXED STYLE */
 #clockBox{
   background:#111;
+  color:#fff;
   padding:10px;
-  text-align:center;
   border-radius:8px;
+  text-align:center;
   margin-bottom:10px;
+  font-weight:bold;
 }
 
 /* FOOTER */
@@ -159,8 +161,8 @@ footer{
 
 <h2>Billing System</h2>
 
-<!-- LIVE CLOCK -->
-<div id="clockBox"></div>
+<!-- CLOCK -->
+<div id="clockBox">Loading system time...</div>
 
 <h4 id="userInfo"></h4>
 
@@ -187,12 +189,6 @@ footer{
 <!-- FOOTER -->
 <footer>
   <p>© 2026 Anil Giri. All rights reserved.</p>
-
-  <marquee>
-    <p style="color:green;font-weight:bold;margin:0;">
-      Page created by Anil Giri
-    </p>
-  </marquee>
 </footer>
 
 <script>
@@ -211,19 +207,29 @@ const db = firebase.database();
 let currentUser=null;
 let billItems=[];
 
-/* CLOCK */
+/* ✅ FIXED CLOCK (MAIN FIX) */
 function updateClock(){
-  let now = new Date();
 
-  let date = now.toLocaleDateString('en-IN');
-  let time = now.toLocaleTimeString();
-  let day  = now.toLocaleDateString('en-IN',{weekday:'long'});
+  const el = document.getElementById("clockBox");
+  if(!el) return;
 
-  document.getElementById("clockBox").innerHTML =
-    "📅 " + date + " | ⏰ " + time + " | 📆 " + day;
+  const now = new Date();
+
+  const date = now.toLocaleDateString('en-IN', {
+    weekday:'long',
+    year:'numeric',
+    month:'long',
+    day:'numeric'
+  });
+
+  const time = now.toLocaleTimeString('en-IN');
+
+  el.innerHTML =
+    "📅 <b>" + date + "</b><br>⏰ <b>" + time + "</b>";
 }
 
 setInterval(updateClock,1000);
+window.addEventListener("load",updateClock);
 
 /* NAV */
 function openLogin(role){
@@ -330,13 +336,8 @@ function render(){
   document.getElementById("total").innerText=total;
 }
 
-/* PRINT WITH USER + DATE + TIME + DAY */
+/* PRINT FIXED */
 function printBill(){
-
-  if(billItems.length===0){
-    alert("No items to print");
-    return;
-  }
 
   let now=new Date();
 
