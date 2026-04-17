@@ -8,14 +8,19 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
+
+/* FORCE EVERYTHING HIDDEN INITIALLY */
+#loginPage, #app, #adminPanel, #welcome {
+  display: none;
+}
+
+/* UI DESIGN */
 body{
   margin:0;
   font-family:Arial;
   background:linear-gradient(135deg,#1e3c72,#2a5298);
   color:#fff;
 }
-
-.page{display:none}
 
 .center{
   height:100vh;
@@ -30,11 +35,11 @@ button{
   margin:5px;
   width:220px;
   background:#ffcc00;
-  color:#000;
   border:none;
   border-radius:6px;
-  cursor:pointer;
   font-weight:bold;
+  cursor:pointer;
+  color:#000;
 }
 
 .card{
@@ -79,20 +84,21 @@ td{
 tr:nth-child(even){
   background:#f2f6ff;
 }
+
 </style>
 </head>
 
 <body>
 
 <!-- WELCOME -->
-<div id="welcome" class="page center" style="display:flex">
+<div id="welcome" class="center" style="display:flex">
 <h1>🏪 Giri Enterprises POS</h1>
 <button onclick="openLogin('admin')">Admin Login</button>
 <button onclick="openLogin('employee')">Employee Login</button>
 </div>
 
 <!-- LOGIN -->
-<div id="loginPage" class="page center">
+<div id="loginPage" class="center">
 <div class="card">
 <h2 id="title"></h2>
 <input id="email" placeholder="Email">
@@ -103,7 +109,7 @@ tr:nth-child(even){
 </div>
 
 <!-- APP -->
-<div id="app" class="page">
+<div id="app">
 
 <!-- ADMIN -->
 <div id="adminPanel" class="section" style="display:none">
@@ -136,7 +142,7 @@ tr:nth-child(even){
 <input id="qty" placeholder="Qty">
 
 <button onclick="addItem()">Add Item</button>
-<button onclick="clearAllItems()" style="background:#e74c3c;color:#fff;">Delete All Items</button>
+<button onclick="clearAllItems()" style="background:#e74c3c;color:#fff;">Delete All</button>
 
 <table id="billTable">
 <tr>
@@ -165,20 +171,20 @@ firebase.initializeApp({
 const auth = firebase.auth();
 const db = firebase.database();
 
-/* STATE */
 let currentUser=null;
 let billItems=[];
 let total=0;
-let selectedRole="";
 
-/* EMAIL CHECK */
-function isValidEmail(email){
-  return email.endsWith("@girienterprises.com");
-}
+/* SAFE START */
+window.onload=function(){
+  document.getElementById("welcome").style.display="flex";
+  document.getElementById("loginPage").style.display="none";
+  document.getElementById("app").style.display="none";
+  document.getElementById("adminPanel").style.display="none";
+};
 
 /* NAV */
 function openLogin(role){
-  selectedRole=role;
   document.getElementById("welcome").style.display="none";
   document.getElementById("loginPage").style.display="flex";
   document.getElementById("title").innerText=role.toUpperCase()+" LOGIN";
@@ -194,12 +200,6 @@ function login(){
 
   auth.signInWithEmailAndPassword(email.value, pass.value)
   .then(res=>{
-
-    if(!isValidEmail(res.user.email)){
-      alert("Only @girienterprises.com allowed");
-      auth.signOut();
-      return;
-    }
 
     db.ref("users/"+res.user.uid).once("value").then(snap=>{
 
@@ -225,11 +225,6 @@ function login(){
 /* CREATE USER */
 function createUser(){
 
-  if(!isValidEmail(newEmail.value)){
-    alert("Only company email allowed");
-    return;
-  }
-
   auth.createUserWithEmailAndPassword(newEmail.value,newPass.value)
   .then(res=>{
 
@@ -241,8 +236,7 @@ function createUser(){
     alert("User Created ✔");
     loadUsers();
 
-  })
-  .catch(e=>alert(e.message));
+  });
 }
 
 /* USERS */
@@ -259,10 +253,6 @@ function loadUsers(){
 /* BILL */
 function addItem(){
 
-  let item=document.getElementById("item");
-  let price=document.getElementById("price");
-  let qty=document.getElementById("qty");
-
   let t=Number(price.value)*Number(qty.value);
 
   billItems.push({
@@ -273,8 +263,6 @@ function addItem(){
   });
 
   item.value=""; price.value=""; qty.value="";
-  item.focus();
-
   render();
 }
 
@@ -310,60 +298,16 @@ function render(){
   document.getElementById("total").innerText=total;
 }
 
-/* EDIT */
-function editItem(i){
-
-  let x=billItems[i];
-
-  let item=prompt("Item",x.item);
-  let price=prompt("Price",x.price);
-  let qty=prompt("Qty",x.qty);
-
-  billItems[i]={
-    item,
-    price:Number(price),
-    qty:Number(qty),
-    total:Number(price)*Number(qty)
-  };
-
-  render();
-}
-
-/* DELETE */
-function deleteItem(i){
-  billItems.splice(i,1);
-  render();
-}
-
-/* CLEAR ALL */
+/* DELETE ALL */
 function clearAllItems(){
   billItems=[];
   render();
 }
 
-/* SAVE */
-function saveBill(){
-
-  let now=new Date();
-
-  db.ref("bills").push({
-    items:billItems,
-    total:total,
-    date:now.toLocaleDateString(),
-    time:now.toLocaleTimeString(),
-    createdBy:currentUser
-  });
-
-  alert("Bill Saved ✔");
-  billItems=[];
-  render();
-}
-
-/* PRINT */
+/* PRINT WITH DATE TIME */
 function printBill(){
 
-  let shop="GIRI ENTERPRISES";
-  let addr="Address: Taluka-Latur, Dist-Latur - 413 512, Maharashtra, India";
+  let now=new Date();
 
   let rows="";
 
@@ -382,31 +326,24 @@ function printBill(){
 
   w.document.write(`
   <html>
-  <head>
-  <style>
-  body{font-family:Arial;padding:20px}
-  h2,h4{text-align:center}
-  table{width:100%;border-collapse:collapse}
-  th,td{border:1px solid #000;padding:8px;text-align:center}
-  th{background:#eee}
-  .f{text-align:center;margin-top:20px;font-weight:bold}
-  </style>
-  </head>
   <body>
+  <h2 style="text-align:center">GIRI ENTERPRISES</h2>
+  <h4 style="text-align:center">
+  Address: Taluka-Latur, Dist-Latur - 413 512, Maharashtra, India
+  </h4>
 
-  <h2>${shop}</h2>
-  <h4>${addr}</h4>
+  <p style="text-align:center">
+  ${now.toLocaleDateString()} | ${now.toLocaleTimeString()} | ${now.toLocaleDateString('en-US',{weekday:'long'})}
+  </p>
 
-  <table>
+  <table border="1" width="100%">
   <tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr>
   ${rows}
   </table>
 
-  <h3>Total: ₹${total}</h3>
+  <h3 style="text-align:center">Total: ₹${total}</h3>
 
-  <div class="f">
-  Thank you for visiting! Visit Again 🙏
-  </div>
+  <h3 style="text-align:center">Thank you! Visit Again 🙏</h3>
 
   </body>
   </html>
