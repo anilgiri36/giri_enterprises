@@ -8,134 +8,118 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
-
 body{
-  margin:0;
-  font-family:Arial;
-  background:linear-gradient(135deg,#1e3c72,#2a5298);
-  color:#fff;
-  padding-bottom:90px;
+ margin:0;
+ font-family:Arial;
+ background:linear-gradient(135deg,#1e3c72,#2a5298);
+ color:#fff;
+ padding-bottom:90px;
 }
-
 #loginPage,#app,#adminPanel{display:none}
-
 .center{
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
+ height:100vh;
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ flex-direction:column;
 }
-
 button{
-  padding:10px;
-  margin:5px;
-  width:220px;
-  background:#ffcc00;
-  border:none;
-  border-radius:6px;
-  font-weight:bold;
-  cursor:pointer;
-  color:#000;
+ padding:10px;
+ margin:5px;
+ width:220px;
+ background:#ffcc00;
+ border:none;
+ border-radius:6px;
+ font-weight:bold;
+ cursor:pointer;
+ color:#000;
 }
-
 .card{
-  background:#fff;
-  color:#000;
-  padding:20px;
-  border-radius:12px;
-  width:320px;
+ background:#fff;
+ color:#000;
+ padding:20px;
+ border-radius:12px;
+ width:320px;
 }
-
 .section{
-  background:#fff;
-  color:#000;
-  margin:10px;
-  padding:15px;
-  border-radius:12px;
+ background:#fff;
+ color:#000;
+ margin:10px;
+ padding:15px;
+ border-radius:12px;
 }
-
 input,select{
-  padding:8px;
-  margin:5px;
-  width:90%;
+ padding:8px;
+ margin:5px;
+ width:90%;
 }
-
 table{
-  width:100%;
-  border-collapse:collapse;
-  background:#fff;
-  color:#000;
+ width:100%;
+ border-collapse:collapse;
+ background:#fff;
+ color:#000;
 }
-
 th{
-  background:#1e3c72;
-  color:#fff;
+ background:#1e3c72;
+ color:#fff;
 }
-
 td{
-  border:1px solid #ddd;
-  padding:6px;
+ border:1px solid #ddd;
+ padding:6px;
 }
-
 tr:nth-child(even){
-  background:#f2f6ff;
+ background:#f2f6ff;
 }
-
 #clockBox{
-  background:#fff;
-  padding:10px;
-  text-align:center;
-  border-radius:8px;
-  margin-bottom:10px;
+ background:#fff;
+ padding:10px;
+ text-align:center;
+ border-radius:8px;
+ margin-bottom:10px;
 }
-
 footer{
-  position:fixed;
-  bottom:0;
-  left:0;
-  width:100%;
-  background:#111;
-  color:gray;
-  text-align:center;
-  padding:8px;
-  z-index:9999;
+ position:fixed;
+ bottom:0;
+ left:0;
+ width:100%;
+ background:#111;
+ color:gray;
+ text-align:center;
+ padding:8px;
+ z-index:9999;
 }
-
 </style>
 </head>
 
 <body>
 
-<!-- WELCOME -->
 <div id="welcome" class="center" style="display:flex">
 <h1>🏪 Giri Enterprises POS</h1>
 <button onclick="openLogin('admin')">Admin Login</button>
 <button onclick="openLogin('employee')">Employee Login</button>
 </div>
 
-<!-- LOGIN -->
 <div id="loginPage" class="center">
 <div class="card">
 <h2 id="loginTitle">LOGIN</h2>
-
 <input id="email" placeholder="Email">
 <input id="pass" type="password" placeholder="Password">
-
 <button onclick="login()">Login</button>
 <button onclick="back()">Back</button>
-
 </div>
 </div>
 
-<!-- APP -->
 <div id="app">
 
 <div style="text-align:right;padding:10px;">
 <button onclick="logout()" style="background:red;color:#fff;width:120px;">Sign Out</button>
 </div>
 
-<!-- ADMIN -->
+<div class="section" style="text-align:center;">
+<h2>🏪 Giri Enterprises</h2>
+<p>Taluka-Latur, Dist-Latur - 413512, Maharashtra, India</p>
+</div>
+
 <div id="adminPanel" class="section">
 <h2>Admin Panel</h2>
 
@@ -152,13 +136,10 @@ footer{
 <ul id="userList"></ul>
 </div>
 
-<!-- BILLING -->
 <div class="section">
-
 <h2>Billing System</h2>
 
 <div id="clockBox"></div>
-
 <h4 id="userInfo"></h4>
 
 <input id="item" placeholder="Item">
@@ -177,12 +158,12 @@ footer{
 <h3>Total: ₹<span id="total">0</span></h3>
 
 <button onclick="printBill()">Print / PDF</button>
-
 </div>
+
 </div>
 
 <footer>
-  <p>© 2026 Anil Giri. All rights reserved.</p>
+<p>© 2026 Anil Giri. All rights reserved.</p>
 </footer>
 
 <script>
@@ -194,6 +175,7 @@ firebase.initializeApp({
   projectId: "giri-enterprises-pos"
 });
 
+
 const auth = firebase.auth();
 const db = firebase.database();
 
@@ -202,212 +184,244 @@ let billItems=[];
 
 /* CLOCK */
 function updateClock(){
-  let now = new Date();
-
-  let date = now.toLocaleDateString('en-IN');
-  let time = now.toLocaleTimeString('en-IN');
-  let day  = now.toLocaleDateString('en-IN',{weekday:'long'});
-
-  document.getElementById("clockBox").innerHTML =
-    "📅 " + date + " | ⏰ " + time + " | 📆 " + day;
+ let now = new Date();
+ let date = now.toLocaleDateString('en-IN');
+ let time = now.toLocaleTimeString('en-IN');
+ let day = now.toLocaleDateString('en-IN',{weekday:'long'});
+ document.getElementById("clockBox").innerHTML =
+ "📅 " + date + " | ⏰ " + time + " | 📆 " + day;
 }
 setInterval(updateClock,1000);
 
 /* NAV */
 function openLogin(role){
-  document.getElementById("welcome").style.display="none";
-  document.getElementById("loginPage").style.display="flex";
-  document.getElementById("loginTitle").innerText=role.toUpperCase()+" LOGIN";
+ document.getElementById("welcome").style.display="none";
+ document.getElementById("loginPage").style.display="flex";
+ document.getElementById("loginTitle").innerText=role.toUpperCase()+" LOGIN";
 }
-
 function back(){
-  document.getElementById("loginPage").style.display="none";
-  document.getElementById("welcome").style.display="flex";
+ document.getElementById("loginPage").style.display="none";
+ document.getElementById("welcome").style.display="flex";
 }
 
 /* LOGIN */
 function login(){
+ let email=document.getElementById("email").value.trim();
+ let pass=document.getElementById("pass").value.trim();
 
-  let email=document.getElementById("email").value.trim();
-  let pass=document.getElementById("pass").value.trim();
+ auth.signInWithEmailAndPassword(email,pass)
+ .then(res=>{
+  db.ref("users/"+res.user.uid).once("value").then(snap=>{
+    currentUser=snap.val();
 
-  auth.signInWithEmailAndPassword(email,pass)
-  .then(res=>{
+    document.getElementById("loginPage").style.display="none";
+    document.getElementById("app").style.display="block";
 
-    db.ref("users/"+res.user.uid).once("value").then(snap=>{
-
-      currentUser=snap.val();
-
-      document.getElementById("loginPage").style.display="none";
-      document.getElementById("app").style.display="block";
-
-      document.getElementById("userInfo").innerText =
+    document.getElementById("userInfo").innerText =
       "User: " + currentUser.email + " (" + currentUser.role + ")";
 
-    });
-
-  })
-  .catch(e=>alert(e.message));
+    if(currentUser.role === "admin"){
+      document.getElementById("adminPanel").style.display = "block";
+      loadUsers();
+    } else {
+      document.getElementById("adminPanel").style.display = "none";
+    }
+  });
+ })
+ .catch(e=>alert(e.message));
 }
 
 /* LOGOUT */
 function logout(){
-  auth.signOut().then(()=>location.reload());
+ auth.signOut().then(()=>location.reload());
 }
 
-/* ADD ITEM */
+/* ADMIN */
+function createUser(){
+ let email = document.getElementById("newEmail").value.trim();
+ let pass = document.getElementById("newPass").value.trim();
+ let role = document.getElementById("newRole").value;
+
+ if(!email || !pass){
+  alert("Enter email & password");
+  return;
+ }
+
+ firebase.auth().createUserWithEmailAndPassword(email, pass)
+ .then(res=>{
+  return db.ref("users/"+res.user.uid).set({
+    email: email,
+    role: role
+  });
+ })
+ .then(()=>{
+  alert("User Created");
+  loadUsers();
+ })
+ .catch(e=>alert(e.message));
+}
+
+function loadUsers(){
+ let list = document.getElementById("userList");
+ list.innerHTML = "";
+
+ db.ref("users").once("value").then(snapshot=>{
+  snapshot.forEach(child=>{
+    let user = child.val();
+    let uid = child.key;
+
+    let li = document.createElement("li");
+    li.innerHTML = `
+      ${user.email} (${user.role})
+      <button onclick="deleteUser('${uid}')">Delete</button>
+    `;
+    list.appendChild(li);
+  });
+ });
+}
+
+function deleteUser(uid){
+ if(!confirm("Delete this user?")) return;
+
+ db.ref("users/"+uid).remove()
+ .then(()=>{
+  alert("User removed");
+  loadUsers();
+ })
+ .catch(e=>alert(e.message));
+}
+
+/* BILLING */
 function addItem(){
+ let item=document.getElementById("item").value.trim();
+ let price=Number(document.getElementById("price").value);
+ let qty=Number(document.getElementById("qty").value);
 
-  let item=document.getElementById("item").value.trim();
-  let price=Number(document.getElementById("price").value);
-  let qty=Number(document.getElementById("qty").value);
+ if(!item || price<=0 || qty<=0 || isNaN(price) || isNaN(qty)){
+  alert("Enter valid data");
+  return;
+ }
 
-  if(!item || price<=0 || qty<=0 || isNaN(price) || isNaN(qty)){
-    alert("Enter valid data");
-    return;
-  }
+ billItems.push({item,price,qty,total:price*qty});
 
-  billItems.push({item,price,qty,total:price*qty});
+ document.getElementById("item").value="";
+ document.getElementById("price").value="";
+ document.getElementById("qty").value="";
 
-  document.getElementById("item").value="";
-  document.getElementById("price").value="";
-  document.getElementById("qty").value="";
-
-  render();
+ render();
 }
 
-/* RENDER */
 function render(){
+ let table=document.getElementById("billTable");
 
-  let table=document.getElementById("billTable");
+ table.innerHTML=`
+ <tr>
+ <th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th>Action</th>
+ </tr>`;
 
-  table.innerHTML=`
+ let total=0;
+
+ billItems.forEach((x,i)=>{
+  total+=x.total;
+
+  table.innerHTML+=`
   <tr>
-    <th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th>Action</th>
+   <td>${x.item}</td>
+   <td>${x.price}</td>
+   <td>${x.qty}</td>
+   <td>${x.total}</td>
+   <td>
+    <button onclick="editItem(${i})">Edit</button>
+    <button onclick="deleteItem(${i})">Delete</button>
+   </td>
   </tr>`;
+ });
 
-  let total=0;
-
-  billItems.forEach((x,i)=>{
-    total+=x.total;
-
-    table.innerHTML+=`
-      <tr>
-        <td>${x.item}</td>
-        <td>${x.price}</td>
-        <td>${x.qty}</td>
-        <td>${x.total}</td>
-        <td>
-          <button onclick="editItem(${i})">Edit</button>
-          <button onclick="deleteItem(${i})">Delete</button>
-        </td>
-      </tr>
-    `;
-  });
-
-  document.getElementById("total").innerText=total;
+ document.getElementById("total").innerText=total;
 }
 
-/* FIXED EDIT */
 function editItem(i){
-  let x=billItems[i];
+ let x=billItems[i];
+ let item=prompt("Item",x.item);
+ let price=Number(prompt("Price",x.price));
+ let qty=Number(prompt("Qty",x.qty));
 
-  let item=prompt("Item",x.item);
-  let price=Number(prompt("Price",x.price));
-  let qty=Number(prompt("Qty",x.qty));
+ if(!item || isNaN(price) || isNaN(qty)) return;
 
-  if(!item || isNaN(price) || isNaN(qty)) return;
-
-  billItems[i]={item,price,qty,total:price*qty};
-  render();
+ billItems[i]={item,price,qty,total:price*qty};
+ render();
 }
 
-/* FIXED DELETE */
 function deleteItem(i){
-  if(confirm("Delete item?")){
-    billItems.splice(i,1);
-    render();
-  }
+ if(confirm("Delete item?")){
+  billItems.splice(i,1);
+  render();
+ }
 }
 
-/* DELETE ALL */
 function clearAllItems(){
-  if(confirm("Delete all items?")){
-    billItems=[];
-    render();
-  }
+ if(confirm("Delete all items?")){
+  billItems=[];
+  render();
+ }
 }
 
-/* FIXED PRINT (DATE TIME DAY WORKING) */
+/* PRINT (UPDATED ONLY HERE) */
 function printBill(){
+ if(billItems.length===0){
+  alert("No items");
+  return;
+ }
 
-  if(billItems.length===0){
-    alert("No items");
-    return;
-  }
+ let now = new Date();
+ let date = now.toLocaleDateString('en-IN');
+ let time = now.toLocaleTimeString('en-IN');
+ let day = now.toLocaleDateString('en-IN',{weekday:'long'});
+ let user=currentUser?currentUser.email:"Unknown";
 
-  let now = new Date();
+ let total=0;
+ let rows="";
 
-  let date = now.toLocaleDateString('en-IN',{
-    day:'2-digit',month:'2-digit',year:'numeric'
-  });
+ billItems.forEach(x=>{
+  total+=x.total;
+  rows+=`
+  <tr>
+   <td>${x.item}</td>
+   <td>${x.price}</td>
+   <td>${x.qty}</td>
+   <td>${x.total}</td>
+  </tr>`;
+ });
 
-  let time = now.toLocaleTimeString('en-IN',{
-    hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true
-  });
+ let w=window.open("");
 
-  let day = now.toLocaleDateString('en-IN',{weekday:'long'});
+ w.document.write(`
+ <html>
+ <body>
+ <h2 style="text-align:center">GIRI ENTERPRISES</h2>
+ <hr>
+ <p>User: ${user}</p>
+ <p>Date: ${date}</p>
+ <p>Time: ${time}</p>
+ <p>Day: ${day}</p>
+ <hr>
+ <table border="1" width="100%">
+ <tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr>
+ ${rows}
+ </table>
+ <h3>Total: ₹${total}</h3>
 
-  let user=currentUser?currentUser.email:"Unknown";
+ <hr>
+ <p style="text-align:center;font-size:18px;font-weight:bold;color:green;">
+ 🙏 Thank You! Visit Again 🙏
+ </p>
 
-  let total=0;
-  let rows="";
+ <script>window.onload=function(){window.print()}<\/script>
+ </body>
+ </html>
+ `);
 
-  billItems.forEach(x=>{
-    total+=x.total;
-    rows+=`
-      <tr>
-        <td>${x.item}</td>
-        <td>${x.price}</td>
-        <td>${x.qty}</td>
-        <td>${x.total}</td>
-      </tr>
-    `;
-  });
-
-  let w=window.open("");
-
-  w.document.write(`
-  <html>
-  <body>
-  <h2 style="text-align:center">GIRI ENTERPRISES</h2>
-
-  <p style="text-align:center">
-  Address: Taluka-Latur, Dist-Latur - 413 512, Maharashtra, India
-  </p>
-
-  <hr>
-
-  <p>User: ${user}</p>
-  <p>Date: ${date}</p>
-  <p>Time: ${time}</p>
-  <p>Day: ${day}</p>
-
-  <hr>
-
-  <table border="1" width="100%">
-  <tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr>
-  ${rows}
-  </table>
-
-  <h3>Total: ₹${total}</h3>
-
-  <script>window.onload=function(){window.print()}<\/script>
-  </body>
-  </html>
-  `);
-
-  w.document.close();
+ w.document.close();
 }
 
 </script>
